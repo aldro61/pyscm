@@ -16,4 +16,4 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-python -m unittest discover -s ./tests -p "*.py"
+python -m unittest discover -p "*.py"
