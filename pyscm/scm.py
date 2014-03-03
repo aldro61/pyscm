@@ -59,13 +59,17 @@ class SetCoveringMachine:
         Parameters:
         -----------
         binary_attributes: binary_attribute_like
-            A list of binary attributes to be used to build the model.
+            A list of unique binary attributes to be used to build the model.
 
         X: numpy_array, shape=(n_examples, n_features)
             The feature vectors associated to the training examples.
 
         y: numpy_array, shape=(n_examples,)
             The labels associated to the training examples.
+            
+        Notes:
+        ------
+        For the sake of performance, the algorithm will not detect duplicate binary attributes.
         """
         binary_attributes = np.asarray(binary_attributes, dtype=np.object)
 
