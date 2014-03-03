@@ -105,7 +105,7 @@ class SetCoveringMachine:
             positive_example_idx = positive_example_idx[
                 attribute_classifications[best_attribute_idx][positive_example_idx] != 0]
 
-            # Remove the stumps that were created from the same attribute of the input space
+            # Remove the selected attribute from the candidate binary attributes
             np.delete(attribute_classifications, best_attribute_idx, axis=0)
             np.delete(binary_attributes, best_attribute_idx)
 
