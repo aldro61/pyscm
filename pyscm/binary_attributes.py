@@ -91,6 +91,16 @@ class DecisionStump(BinaryAttribute):
         return labels
 
     def inverse(self):
+        """
+        Creates a decision stump that is the inverse of the current decision stump (self).
+        For any example, the label attributed by self must be the opposite of the label attributed
+        by the inverse of self.
+        
+        Returns:
+        --------
+        inverse: DecisionStump
+            A decision stump that is the inverse of self.
+        """
         return DecisionStump(self.feature_idx, self.direction*-1, self.threshold)
 
     def __str__(self):
