@@ -42,6 +42,16 @@ class BinaryAttribute:
         raise NotImplementedError()
 
     def inverse(self):
+        """
+        Creates a binary attribute that is the inverse of the current binary attribute (self).
+        For any example, the label attributed by self must be the opposite of the label attributed
+        by the inverse of self.
+        
+        Returns:
+        --------
+        inverse: BinaryAttribute
+            A binary attribute that is the inverse of self.
+        """
         raise NotImplementedError()
 
 
