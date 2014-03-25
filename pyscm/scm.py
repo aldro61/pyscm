@@ -63,7 +63,7 @@ class SetCoveringMachine(object):
         self._verbose_print = partial(_conditional_print, condition=verbose)
 
 
-    def fit(self, X, y, binary_attributes, attribute_classifications=None):
+    def fit(self, X, y, binary_attributes, attribute_classifications=None, model_append_callback=None):
         """
         Fit a SCM model.
 
@@ -81,13 +81,17 @@ class SetCoveringMachine(object):
         attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
             The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
             classification process.
-            
+
+        model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute)
+            A function which is called when a new binary attribute is appended to the model.
+
         Notes:
         ------
         * HDF5: The SCM can learn from a great number of attributes. Storing them in memory can require a large amount
                 of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
                 We try to prevent loading the entire dataset into memory. The user is assumed to be using h5py.
         """
+
         classes, y = np.unique(y, return_inverse=True)
         self._classes = classes
         self._verbose_print(
@@ -136,7 +140,7 @@ class SetCoveringMachine(object):
                 self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
             positive_error_counts = count * -1 + positive_example_idx.shape[0]
 
-            self._verbose_print("Computing attribute utilites")
+            self._verbose_print("Computing attribute utilities")
             utilities = negative_cover_counts - self.p * positive_error_counts
 
             best_attribute_idx = np.argmax(utilities)
@@ -144,14 +148,18 @@ class SetCoveringMachine(object):
             selected_attribute_idx.append(best_attribute_idx)
 
             if self.model_type == conjunction:
-                self.model.add(best_attribute)
-                self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
-                                    "): " + str(best_attribute))
+                new_attribute = best_attribute
+                self.model.add(new_attribute)
             elif self.model_type == disjunction:
-                attribute = best_attribute.inverse()
-                self.model.add(attribute)
-                self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
-                                    "): " + str(attribute))
+                new_attribute = best_attribute.inverse()
+                self.model.add(new_attribute)
+
+            if model_append_callback is not None:
+                model_append_callback(new_attribute)
+
+            self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
+                                    "): " + str(new_attribute))
+            del new_attribute, best_attribute
 
             self._verbose_print("Discarding covered negative examples")
             negative_example_idx = negative_example_idx[
