@@ -18,7 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy as np
+
 from .utils import _class_to_string
+
 
 class BinaryAttribute(object):
     """
@@ -29,6 +31,7 @@ class BinaryAttribute(object):
     example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
             A list containing an element of any type for each example on which the attribute depends.
     """
+
     def __init__(self, example_dependencies=[]):
         self._example_dependencies = example_dependencies
 
@@ -87,7 +90,6 @@ class BinaryAttribute(object):
 
     def __str__(self):
         return _class_to_string(self)
-
 
 
 class DecisionStump(BinaryAttribute):
@@ -151,7 +153,7 @@ class DecisionStump(BinaryAttribute):
         inverse: DecisionStump
             A decision stump that is the inverse of self.
         """
-        return DecisionStump(self.feature_idx, self.direction*-1, self.threshold, self.example_dependencies)
+        return DecisionStump(self.feature_idx, self.direction * -1, self.threshold, self.example_dependencies)
 
     def __str__(self):
         return "x[" + str(self.feature_idx) + "] " + (">" if self.direction == 1 else "<=") + " " + str(self.threshold)
@@ -175,6 +177,7 @@ class EqualityTest(BinaryAttribute):
     example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
             A list containing an element of any type for each example on which the attribute depends.
     """
+
     def __init__(self, feature_idx, value, outcome=True, example_dependencies=[]):
         self.feature_idx = feature_idx
         self.value = value

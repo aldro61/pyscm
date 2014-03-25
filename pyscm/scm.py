@@ -17,13 +17,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from functools import partial
+from math import ceil
+
 import numpy as np
 
-from functools import partial
 from .utils import _conditional_print, _class_to_string
 from .model import ConjunctionModel, DisjunctionModel
 
-from math import ceil
 
 class SetCoveringMachine(object):
     """
@@ -45,6 +46,7 @@ class SetCoveringMachine(object):
     verbose: bool, default=False
         Sets verbose mode on/off.
     """
+
     def __init__(self, model_type="conjunction", p=1.0, max_attributes=10, verbose=False):
         if model_type == "conjunction":
             self.model = ConjunctionModel()
@@ -88,9 +90,10 @@ class SetCoveringMachine(object):
         """
         classes, y = np.unique(y, return_inverse=True)
         self._classes = classes
-        self._verbose_print("Example classes are: positive ("+str(self._classes[1])+"), negative ("+str(self._classes[0])+")")
+        self._verbose_print(
+            "Example classes are: positive (" + str(self._classes[1]) + "), negative (" + str(self._classes[0]) + ")")
 
-        self._verbose_print("Got "+len(binary_attributes)+" binary attributes.")
+        self._verbose_print("Got " + len(binary_attributes) + " binary attributes.")
         if attribute_classifications is None:
             self._verbose_print("Classifying the examples with the binary attributes")
             attribute_classifications = np.zeros((X.shape[0], len(binary_attributes)), dtype=np.uint8)
@@ -99,7 +102,8 @@ class SetCoveringMachine(object):
         else:
             self._verbose_print("Binary attribute classifications were precomputed")
             if attribute_classifications.shape[1] != len(binary_attributes):
-                raise ValueError("The number of attributes must match in attribute_classifications and binary_attributes.")
+                raise ValueError(
+                    "The number of attributes must match in attribute_classifications and binary_attributes.")
 
             if attribute_classifications.shape[0] != X.shape[0]:
                 raise ValueError("The number of examples must match in attribute_classifications and X.")
@@ -119,15 +123,17 @@ class SetCoveringMachine(object):
             self._verbose_print("Counting covered negative examples")
             count = np.zeros(attribute_classifications.shape[1])
             for i in xrange(n_blocks):
-                count[i*block_size : (i+1)*block_size] = np.sum(attribute_classifications[negative_example_idx, i*block_size : (i+1)*block_size], axis=0)
-                self._verbose_print("Block "+str(i)+" of "+str(n_blocks))
+                count[i * block_size: (i + 1) * block_size] = np.sum(
+                    attribute_classifications[negative_example_idx, i * block_size: (i + 1) * block_size], axis=0)
+                self._verbose_print("Block " + str(i) + " of " + str(n_blocks))
             negative_cover_counts = count * -1 + negative_example_idx.shape[0]
 
             self._verbose_print("Couting errors on positive examples")
             count = np.zeros(attribute_classifications.shape[1])
             for i in xrange(n_blocks):
-                count[i*block_size : (i+1)*block_size] = np.sum(attribute_classifications[positive_example_idx, i*block_size : (i+1)*block_size], axis=0)
-                self._verbose_print("Block "+str(i)+" of "+str(n_blocks))
+                count[i * block_size: (i + 1) * block_size] = np.sum(
+                    attribute_classifications[positive_example_idx, i * block_size: (i + 1) * block_size], axis=0)
+                self._verbose_print("Block " + str(i) + " of " + str(n_blocks))
             positive_error_counts = count * -1 + positive_example_idx.shape[0]
 
             self._verbose_print("Computing attribute utilites")
@@ -136,7 +142,9 @@ class SetCoveringMachine(object):
             best_attribute_idx = np.argmax(utilities)
             best_attribute = binary_attributes[best_attribute_idx]
             selected_attribute_idx.append(best_attribute_idx)
-            self._verbose_print("Attribute with the highest utility ("+str(utilities[best_attribute_idx])+"): "+str(best_attribute))
+            self._verbose_print(
+                "Attribute with the highest utility (" + str(utilities[best_attribute_idx]) + "): " + str(
+                    best_attribute))
 
             if self.model_type == "conjunction":
                 self.model.add(best_attribute)
@@ -144,9 +152,11 @@ class SetCoveringMachine(object):
                 self.model.add(best_attribute.inverse())
 
             self._verbose_print("Discarding covered negative examples")
-            negative_example_idx = negative_example_idx[attribute_classifications[negative_example_idx, best_attribute_idx] != 0]
+            negative_example_idx = negative_example_idx[
+                attribute_classifications[negative_example_idx, best_attribute_idx] != 0]
             self._verbose_print("Discarding misclassified positive examples")
-            positive_example_idx = positive_example_idx[attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
+            positive_example_idx = positive_example_idx[
+                attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
 
     def predict(self, X):
         """

@@ -18,7 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy as np
+
 from .utils import _class_to_string
+
 
 class ModelMixin:
     def __init__(self):
