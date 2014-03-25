@@ -19,10 +19,13 @@
 """
 import numpy as np
 
-from model import ConjunctionModel, DisjunctionModel
+from functools import partial
+from .utils import _conditional_print, _class_to_string
+from .model import ConjunctionModel, DisjunctionModel
 
+from math import ceil
 
-class SetCoveringMachine:
+class SetCoveringMachine(object):
     """
     The Set Covering Machine (SCM).
 
@@ -33,14 +36,16 @@ class SetCoveringMachine:
     model_type: string, {"conjunction", "disjunction"}, default="conjunction"
         The type of model to be built.
 
+    p: float, default=1.0
+        The trade-off parameter for the SCM.
+
     max_attributes: int, default=10
         The maximum number of binary attributes to include in the model.
 
-    p: float, default=1.0
-        The trade-off parameter for the SCM.
+    verbose: bool, default=False
+        Sets verbose mode on/off.
     """
-
-    def __init__(self, model_type="conjunction", max_attributes=10, p=1.0):
+    def __init__(self, model_type="conjunction", p=1.0, max_attributes=10, verbose=False):
         if model_type == "conjunction":
             self.model = ConjunctionModel()
         elif model_type == "disjunction":
@@ -52,33 +57,50 @@ class SetCoveringMachine:
         self.max_attributes = max_attributes
         self.p = p
 
-    def fit(self, binary_attributes, X, y):
+        self.verbose = verbose
+        self._verbose_print = partial(_conditional_print, condition=verbose)
+
+
+    def fit(self, X, y, binary_attributes, attribute_classifications=None):
         """
         Fit a SCM model.
 
         Parameters:
         -----------
-        binary_attributes: binary_attribute_like
-            A list of unique binary attributes to be used to build the model.
-
         X: numpy_array, shape=(n_examples, n_features)
             The feature vectors associated to the training examples.
 
         y: numpy_array, shape=(n_examples,)
             The labels associated to the training examples.
+
+        binary_attributes: binary_attribute_like
+            A list of unique binary attributes to be used to build the model.
+
+        attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
+            The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
+            classification process.
             
         Notes:
         ------
         For the sake of performance, the algorithm will not detect duplicate binary attributes.
         """
-        binary_attributes = np.asarray(binary_attributes, dtype=np.object)
-
         classes, y = np.unique(y, return_inverse=True)
         self._classes = classes
+        self._verbose_print("Example classes are: positive ("+str(self._classes[1])+"), negative ("+str(self._classes[0])+")")
 
-        attribute_classifications = np.zeros((len(binary_attributes), X.shape[0]))
-        for i, a in enumerate(binary_attributes):
-            attribute_classifications[i] = a.classify(X)
+        self._verbose_print("Got "+len(binary_attributes)+" binary attributes.")
+        if attribute_classifications is None:
+            self._verbose_print("Classifying the examples with the binary attributes")
+            attribute_classifications = np.zeros((X.shape[0], len(binary_attributes)), dtype=np.uint8)
+            for i, a in enumerate(binary_attributes):
+                attribute_classifications[:, i] = a.classify(X)
+        else:
+            self._verbose_print("Binary attribute classifications were precomputed")
+            if attribute_classifications.shape[1] != len(binary_attributes):
+                raise ValueError("The number of attributes must match in attribute_classifications and binary_attributes.")
+
+            if attribute_classifications.shape[0] != X.shape[0]:
+                raise ValueError("The number of examples must match in attribute_classifications and X.")
 
         if self.model_type == "conjunction":
             negative_example_idx = np.where(y == 0)[0]
@@ -87,31 +109,42 @@ class SetCoveringMachine:
             negative_example_idx = np.where(y == 1)[0]
             positive_example_idx = np.where(y == 0)[0]
 
+        selected_attribute_idx = []
+        block_size = 1000000
+        n_blocks = int(ceil(float(attribute_classifications.shape[1]) / block_size))
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes and len(binary_attributes) > 0:
-            negative_cover_counts = np.sum(attribute_classifications[:, negative_example_idx], axis=1) * -1 + len(
-                negative_example_idx)
-            positive_error_counts = np.sum(attribute_classifications[:, positive_example_idx], axis=1) * -1 + len(
-                positive_example_idx)
+
+            self._verbose_print("Counting covered negative examples")
+            count = np.zeros(attribute_classifications.shape[1])
+            for i in xrange(n_blocks):
+                count[i*block_size : (i+1)*block_size] = np.sum(attribute_classifications[negative_example_idx, i*block_size : (i+1)*block_size], axis=0)
+                self._verbose_print("Block "+str(i)+" of "+str(n_blocks))
+            negative_cover_counts = count * -1 + negative_example_idx.shape[0]
+
+            self._verbose_print("Couting errors on positive examples")
+            count = np.zeros(attribute_classifications.shape[1])
+            for i in xrange(n_blocks):
+                count[i*block_size : (i+1)*block_size] = np.sum(attribute_classifications[positive_example_idx, i*block_size : (i+1)*block_size], axis=0)
+                self._verbose_print("Block "+str(i)+" of "+str(n_blocks))
+            positive_error_counts = count * -1 + positive_example_idx.shape[0]
+
+            self._verbose_print("Computing attribute utilites")
             utilities = negative_cover_counts - self.p * positive_error_counts
 
             best_attribute_idx = np.argmax(utilities)
+            best_attribute = binary_attributes[best_attribute_idx]
+            selected_attribute_idx.append(best_attribute_idx)
+            self._verbose_print("Attribute with the highest utility ("+str(utilities[best_attribute_idx])+"): "+str(best_attribute))
 
             if self.model_type == "conjunction":
-                self.model.add(binary_attributes[best_attribute_idx])
+                self.model.add(best_attribute)
             elif self.model_type == "disjunction":
-                self.model.add(binary_attributes[best_attribute_idx].inverse())
+                self.model.add(best_attribute.inverse())
 
-            # Remove the covered negative examples from the negative example set
-            negative_example_idx = negative_example_idx[
-                attribute_classifications[best_attribute_idx][negative_example_idx] != 0]
-
-            # Remove the mistaken positive examples from the positive example set
-            positive_example_idx = positive_example_idx[
-                attribute_classifications[best_attribute_idx][positive_example_idx] != 0]
-
-            # Remove the selected attribute from the candidate binary attributes
-            np.delete(attribute_classifications, best_attribute_idx, axis=0)
-            np.delete(binary_attributes, best_attribute_idx)
+            self._verbose_print("Discarding covered negative examples")
+            negative_example_idx = negative_example_idx[attribute_classifications[negative_example_idx, best_attribute_idx] != 0]
+            self._verbose_print("Discarding misclassified positive examples")
+            positive_example_idx = positive_example_idx[attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
 
     def predict(self, X):
         """
@@ -129,7 +162,12 @@ class SetCoveringMachine:
         """
         if not self._is_fitted():
             raise RuntimeError("A model must be fitted prior to calling predict.")
-        return self._classes.take(self.model.predict(X), dtype=np.int8)
+        return self._classes.take(self.model.predict(X))
 
     def _is_fitted(self):
         return len(self.model) > 0
+
+    def __str__(self):
+        return _class_to_string(self)
+
+
