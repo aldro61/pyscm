@@ -43,7 +43,7 @@ def _conditional_print(text, condition):
     -----------
     text: string
         The text to print
-        
+
     condition: bool
         Print or do not print
     """
