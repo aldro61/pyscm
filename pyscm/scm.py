@@ -80,7 +80,7 @@ class SetCoveringMachine(object):
 
         attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
             The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
-            classification process.
+            classification process. If the value is None, the classifications will be computed.
 
         model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute), default=None
             A function which is called when a new binary attribute is appended to the model.
