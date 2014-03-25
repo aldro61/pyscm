@@ -23,7 +23,7 @@ from math import ceil
 import numpy as np
 
 from .utils import _conditional_print, _class_to_string
-from .model import ConjunctionModel, DisjunctionModel
+from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
 
 class SetCoveringMachine(object):
@@ -47,7 +47,7 @@ class SetCoveringMachine(object):
         Sets verbose mode on/off.
     """
 
-    def __init__(self, model_type="conjunction", p=1.0, max_attributes=10, verbose=False):
+    def __init__(self, model_type=conjunction, p=1.0, max_attributes=10, verbose=False):
         if model_type == "conjunction":
             self.model = ConjunctionModel()
         elif model_type == "disjunction":
@@ -108,10 +108,10 @@ class SetCoveringMachine(object):
             if attribute_classifications.shape[0] != X.shape[0]:
                 raise ValueError("The number of examples must match in attribute_classifications and X.")
 
-        if self.model_type == "conjunction":
+        if self.model_type == conjunction:
             negative_example_idx = np.where(y == 0)[0]
             positive_example_idx = np.where(y == 1)[0]
-        elif self.model_type == "disjunction":
+        elif self.model_type == disjunction:
             negative_example_idx = np.where(y == 1)[0]
             positive_example_idx = np.where(y == 0)[0]
 
@@ -143,11 +143,11 @@ class SetCoveringMachine(object):
             best_attribute = binary_attributes[best_attribute_idx]
             selected_attribute_idx.append(best_attribute_idx)
 
-            if self.model_type == "conjunction":
+            if self.model_type == conjunction:
                 self.model.add(best_attribute)
                 self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
                                     "): " + str(best_attribute))
-            elif self.model_type == "disjunction":
+            elif self.model_type == disjunction:
                 attribute = best_attribute.inverse()
                 self.model.add(attribute)
                 self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
