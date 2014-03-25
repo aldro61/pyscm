@@ -82,7 +82,9 @@ class SetCoveringMachine(object):
             
         Notes:
         ------
-        For the sake of performance, the algorithm will not detect duplicate binary attributes.
+        * HDF5: The SCM can learn from a great number of attributes. Storing them in memory can require a large amount
+                of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
+                We try to prevent loading the entire dataset into memory. The user is assumed to be using h5py.
         """
         classes, y = np.unique(y, return_inverse=True)
         self._classes = classes
