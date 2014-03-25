@@ -19,32 +19,7 @@
 """
 import numpy as np
 
-from .utils import _class_to_string
-
-
-class ModelMixin:
-    def __init__(self):
-        self.binary_attributes = []
-        self._example_dependencies = []
-
-    def add(self, binary_attribute):
-        self.binary_attributes.append(binary_attribute)
-
-        if len(binary_attribute.example_dependencies) > 0:
-            self._example_dependencies += binary_attribute.example_dependencies
-
-    def remove(self, index):
-        del self.binary_attributes[index]
-
-    @property
-    def example_dependencies(self):
-        return list(self._example_dependencies)
-
-    def __len__(self):
-        return len(self.binary_attributes)
-
-    def __str__(self):
-        return _class_to_string(self)
+from .base import ModelMixin
 
 
 class ConjunctionModel(ModelMixin):
