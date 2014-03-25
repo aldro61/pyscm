@@ -18,33 +18,44 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import numpy as np
-
+from .utils import _class_to_string
 
 class ModelMixin:
     def __init__(self):
         self.binary_attributes = []
+        self._example_dependencies = []
 
     def add(self, binary_attribute):
         self.binary_attributes.append(binary_attribute)
 
+        if len(binary_attribute.example_dependencies) > 0:
+            self._example_dependencies += binary_attribute.example_dependencies
+
     def remove(self, index):
         del self.binary_attributes[index]
+
+    @property
+    def example_dependencies(self):
+        return list(self._example_dependencies)
 
     def __len__(self):
         return len(self.binary_attributes)
 
+    def __str__(self):
+        return _class_to_string(self)
+
 
 class ConjunctionModel(ModelMixin):
     def predict(self, X):
-        predictions = np.ones(X.shape[0])
+        predictions = np.ones(X.shape[0], np.uint8)
         for a in self.binary_attributes:
             predictions = np.logical_and(predictions, a.classify(X))
-        return np.array(predictions, dtype=np.int8)
+        return np.asarray(predictions, dtype=np.uint8)
 
 
 class DisjunctionModel(ModelMixin):
     def predict(self, X):
-        predictions = np.zeros(X.shape[0])
+        predictions = np.zeros(X.shape[0], dtype=np.uint8)
         for a in self.binary_attributes:
             predictions = np.logical_or(predictions, a.classify(X))
-        return np.array(predictions, dtype=np.int8)
+        return np.asarray(predictions, dtype=np.uint8)
