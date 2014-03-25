@@ -82,7 +82,7 @@ class SetCoveringMachine(object):
             The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
             classification process.
 
-        model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute)
+        model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute), default=None
             A function which is called when a new binary attribute is appended to the model.
 
         Notes:
