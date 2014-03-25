@@ -93,7 +93,7 @@ class SetCoveringMachine(object):
         self._verbose_print(
             "Example classes are: positive (" + str(self._classes[1]) + "), negative (" + str(self._classes[0]) + ")")
 
-        self._verbose_print("Got " + len(binary_attributes) + " binary attributes.")
+        self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
             self._verbose_print("Classifying the examples with the binary attributes")
             attribute_classifications = np.zeros((X.shape[0], len(binary_attributes)), dtype=np.uint8)
@@ -125,7 +125,7 @@ class SetCoveringMachine(object):
             for i in xrange(n_blocks):
                 count[i * block_size: (i + 1) * block_size] = np.sum(
                     attribute_classifications[negative_example_idx, i * block_size: (i + 1) * block_size], axis=0)
-                self._verbose_print("Block " + str(i) + " of " + str(n_blocks))
+                self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
             negative_cover_counts = count * -1 + negative_example_idx.shape[0]
 
             self._verbose_print("Couting errors on positive examples")
@@ -133,7 +133,7 @@ class SetCoveringMachine(object):
             for i in xrange(n_blocks):
                 count[i * block_size: (i + 1) * block_size] = np.sum(
                     attribute_classifications[positive_example_idx, i * block_size: (i + 1) * block_size], axis=0)
-                self._verbose_print("Block " + str(i) + " of " + str(n_blocks))
+                self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
             positive_error_counts = count * -1 + positive_example_idx.shape[0]
 
             self._verbose_print("Computing attribute utilites")
@@ -142,14 +142,16 @@ class SetCoveringMachine(object):
             best_attribute_idx = np.argmax(utilities)
             best_attribute = binary_attributes[best_attribute_idx]
             selected_attribute_idx.append(best_attribute_idx)
-            self._verbose_print(
-                "Attribute with the highest utility (" + str(utilities[best_attribute_idx]) + "): " + str(
-                    best_attribute))
 
             if self.model_type == "conjunction":
                 self.model.add(best_attribute)
+                self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
+                                    "): " + str(best_attribute))
             elif self.model_type == "disjunction":
-                self.model.add(best_attribute.inverse())
+                attribute = best_attribute.inverse()
+                self.model.add(attribute)
+                self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
+                                    "): " + str(attribute))
 
             self._verbose_print("Discarding covered negative examples")
             negative_example_idx = negative_example_idx[
