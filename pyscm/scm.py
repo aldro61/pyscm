@@ -119,7 +119,6 @@ class SetCoveringMachine(object):
             negative_example_idx = np.where(y == 1)[0]
             positive_example_idx = np.where(y == 0)[0]
 
-        selected_attribute_idx = []
         block_size = 1000000
         n_blocks = int(ceil(float(attribute_classifications.shape[1]) / block_size))
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes and len(binary_attributes) > 0:
@@ -145,7 +144,6 @@ class SetCoveringMachine(object):
 
             best_attribute_idx = np.argmax(utilities)
             best_attribute = binary_attributes[best_attribute_idx]
-            selected_attribute_idx.append(best_attribute_idx)
 
             if self.model_type == conjunction:
                 new_attribute = best_attribute
