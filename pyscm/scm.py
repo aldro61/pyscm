@@ -25,6 +25,14 @@ import numpy as np
 from .utils import _conditional_print, _class_to_string
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
+def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
+    n_blocks = int(ceil(float(array.shape[1]) / block_size))
+    row_sum = np.zeros(array.shape[1])
+    for i in xrange(n_blocks):
+        row_sum[i * block_size: (i + 1) * block_size] = \
+            np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
+        _conditional_print("Block " + str(i+1) + " of " + str(n_blocks), verbose)
+    return row_sum
 
 class SetCoveringMachine(object):
     """
@@ -50,8 +58,12 @@ class SetCoveringMachine(object):
     def __init__(self, model_type=conjunction, p=1.0, max_attributes=10, verbose=False):
         if model_type == "conjunction":
             self.model = ConjunctionModel()
+            self._add_attribute_to_model = self._append_conjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
         elif model_type == "disjunction":
             self.model = DisjunctionModel()
+            self._add_attribute_to_model = self._append_disjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
         else:
             raise ValueError("Unsupported model type.")
         self.model_type = model_type
@@ -63,27 +75,34 @@ class SetCoveringMachine(object):
         self._verbose_print = partial(_conditional_print, condition=verbose)
 
 
-    def fit(self, X, y, binary_attributes, attribute_classifications=None, model_append_callback=None):
+    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
+            cover_count_block_size=1000):
         """
         Fit a SCM model.
 
         Parameters:
         -----------
-        X: numpy_array, shape=(n_examples, n_features)
-            The feature vectors associated to the training examples.
-
-        y: numpy_array, shape=(n_examples,)
-            The labels associated to the training examples.
-
         binary_attributes: binary_attribute_like
             A list of unique binary attributes to be used to build the model.
 
+        y: numpy_array, shape=(n_examples,)
+            The labels associated to the training examples. y must contain 2 unique class identifiers. The smallest
+            class identifier is attributed to negative examples.
+
+        X: numpy_array, shape=(n_examples, n_features), default=None
+            The feature vectors associated to the training examples. If X is None, then attribute_classifications is
+            expected not to be None.
+
         attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
             The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
-            classification process. If the value is None, the classifications will be computed.
+            classification process. If the value is None, the classifications will be computed using X. Therefore, if
+            attribute_classifications is None, X is expected.
 
         model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute), default=None
             A function which is called when a new binary attribute is appended to the model.
+
+        cover_count_block_size: int, default=1000
+            The maximum number of attributes for which covers are counted at one time. Use this to limit memory usage.
 
         Notes:
         ------
@@ -91,11 +110,18 @@ class SetCoveringMachine(object):
                 of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
                 We try to prevent loading the entire dataset into memory. The user is assumed to be using h5py.
         """
+        if X is None and attribute_classifications is None:
+            raise ValueError("X or attribute_classifications must have a value.")
 
         classes, y = np.unique(y, return_inverse=True)
+        if len(classes) < 2 or len(classes) > 2:
+            raise ValueError("y must contain two unique classes.")
         self._classes = classes
-        self._verbose_print(
-            "Example classes are: positive (" + str(self._classes[1]) + "), negative (" + str(self._classes[0]) + ")")
+        self._verbose_print("Example classes are: positive (" + str(self._classes[1]) + "), negative (" + \
+                    str(self._classes[0]) + ")")
+        del classes
+
+        positive_example_idx, negative_example_idx = self._get_example_idx_by_class(y)
 
         self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
@@ -106,58 +132,34 @@ class SetCoveringMachine(object):
         else:
             self._verbose_print("Binary attribute classifications were precomputed")
             if attribute_classifications.shape[1] != len(binary_attributes):
-                raise ValueError(
-                    "The number of attributes must match in attribute_classifications and binary_attributes.")
-
-            if attribute_classifications.shape[0] != X.shape[0]:
-                raise ValueError("The number of examples must match in attribute_classifications and X.")
-
-        if self.model_type == conjunction:
-            negative_example_idx = np.where(y == 0)[0]
-            positive_example_idx = np.where(y == 1)[0]
-        elif self.model_type == disjunction:
-            negative_example_idx = np.where(y == 1)[0]
-            positive_example_idx = np.where(y == 0)[0]
+                raise ValueError("The number of attributes must match in attribute_classifications and",
+                                 "binary_attributes.")
         del X, y
 
-        block_size = 500000
-        n_blocks = int(ceil(float(attribute_classifications.shape[1]) / block_size))
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes and len(binary_attributes) > 0:
-
             self._verbose_print("Counting covered negative examples")
-            count = np.zeros(attribute_classifications.shape[1])
-            for i in xrange(n_blocks):
-                count[i * block_size: (i + 1) * block_size] = np.sum(
-                    attribute_classifications[negative_example_idx, i * block_size: (i + 1) * block_size], axis=0)
-                self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
-            negative_cover_counts = count * -1 + negative_example_idx.shape[0]
-            del count
+            negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
+                                                                                    attribute_classifications,
+                                                                                    cover_count_block_size,
+                                                                                    self.verbose)
 
-            self._verbose_print("Couting errors on positive examples")
-            count = np.zeros(attribute_classifications.shape[1])
-            for i in xrange(n_blocks):
-                count[i * block_size: (i + 1) * block_size] = np.sum(
-                    attribute_classifications[positive_example_idx, i * block_size: (i + 1) * block_size], axis=0)
-                self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
-            positive_error_counts = count * -1 + positive_example_idx.shape[0]
-            del count
+            self._verbose_print("Counting errors on positive examples")
+            positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
+                                                                                    attribute_classifications,
+                                                                                    cover_count_block_size,
+                                                                                    self.verbose)
 
             self._verbose_print("Computing attribute utilities")
             utilities = negative_cover_counts - self.p * positive_error_counts
             del negative_cover_counts, positive_error_counts
+
+            self._verbose_print("Finding attribute with the greatest utility")
             best_attribute_idx = np.argmax(utilities)
-            best_attribute = binary_attributes[best_attribute_idx]
-            if self.model_type == conjunction:
-                new_attribute = best_attribute
-                self.model.add(new_attribute)
-            elif self.model_type == disjunction:
-                new_attribute = best_attribute.inverse()
-                self.model.add(new_attribute)
+            self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
+            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
             if model_append_callback is not None:
-                model_append_callback(new_attribute)
-            self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
-                                    "): " + str(new_attribute))
-            del utilities, new_attribute, best_attribute
+                model_append_callback(appended_attribute)
+            del utilities, appended_attribute
 
             self._verbose_print("Discarding covered negative examples")
             # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
@@ -201,6 +203,27 @@ class SetCoveringMachine(object):
         if not self._is_fitted():
             raise RuntimeError("A model must be fitted prior to calling predict.")
         return self._classes.take(self.model.predict(X))
+
+    def _append_conjunction_model(self, new_attribute):
+        self.model.add(new_attribute)
+        self._verbose_print("Attribute added to the model: " + str(new_attribute))
+        return new_attribute
+
+    def _append_disjunction_model(self, new_attribute):
+        new_attribute = new_attribute.inverse()
+        self.model.add(new_attribute)
+        self._verbose_print("Attribute added to the model: " + str(new_attribute))
+        return new_attribute
+
+    def _get_example_idx_by_class_conjunction(self, y):
+        positive_example_idx = np.where(y == 1)[0]
+        negative_example_idx = np.where(y == 0)[0]
+        return positive_example_idx, negative_example_idx
+
+    def _get_example_idx_by_class_disjunction(self, y):
+        positive_example_idx = np.where(y == 0)[0]
+        negative_example_idx = np.where(y == 1)[0]
+        return positive_example_idx, negative_example_idx
 
     def _is_fitted(self):
         return len(self.model) > 0
