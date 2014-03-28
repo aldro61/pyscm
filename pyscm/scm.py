@@ -25,14 +25,16 @@ import numpy as np
 from .utils import _conditional_print, _class_to_string
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
+
 def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     n_blocks = int(ceil(float(array.shape[1]) / block_size))
     row_sum = np.zeros(array.shape[1])
     for i in xrange(n_blocks):
         row_sum[i * block_size: (i + 1) * block_size] = \
             np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
-        _conditional_print("Block " + str(i+1) + " of " + str(n_blocks), verbose)
+        _conditional_print("Block " + str(i + 1) + " of " + str(n_blocks), verbose)
     return row_sum
+
 
 class SetCoveringMachine(object):
     """
@@ -56,11 +58,11 @@ class SetCoveringMachine(object):
     """
 
     def __init__(self, model_type=conjunction, p=1.0, max_attributes=10, verbose=False):
-        if model_type == "conjunction":
+        if model_type == conjunction:
             self.model = ConjunctionModel()
             self._add_attribute_to_model = self._append_conjunction_model
             self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
-        elif model_type == "disjunction":
+        elif model_type == disjunction:
             self.model = DisjunctionModel()
             self._add_attribute_to_model = self._append_disjunction_model
             self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
@@ -118,7 +120,7 @@ class SetCoveringMachine(object):
             raise ValueError("y must contain two unique classes.")
         self._classes = classes
         self._verbose_print("Example classes are: positive (" + str(self._classes[1]) + "), negative (" + \
-                    str(self._classes[0]) + ")")
+                            str(self._classes[0]) + ")")
         del classes
 
         positive_example_idx, negative_example_idx = self._get_example_idx_by_class(y)
