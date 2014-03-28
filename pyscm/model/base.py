@@ -38,8 +38,11 @@ class ModelMixin:
     def example_dependencies(self):
         return list(self._example_dependencies)
 
+    def _to_string(self, separator=" "):
+        return separator.join([str(a) for a in self.binary_attributes])
+
     def __len__(self):
         return len(self.binary_attributes)
 
     def __str__(self):
-        return _class_to_string(self)
+        return self._to_string()

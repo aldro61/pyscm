@@ -29,6 +29,9 @@ class ConjunctionModel(ModelMixin):
             predictions = np.logical_and(predictions, a.classify(X))
         return np.asarray(predictions, dtype=np.uint8)
 
+    def __str__(self):
+        return self._to_string(separator=" and ")
+
 
 class DisjunctionModel(ModelMixin):
     def predict(self, X):
@@ -36,3 +39,6 @@ class DisjunctionModel(ModelMixin):
         for a in self.binary_attributes:
             predictions = np.logical_or(predictions, a.classify(X))
         return np.asarray(predictions, dtype=np.uint8)
+
+    def __str__(self):
+        return self._to_string(separator=" or ")
