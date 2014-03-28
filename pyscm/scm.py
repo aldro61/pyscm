@@ -118,8 +118,9 @@ class SetCoveringMachine(object):
         elif self.model_type == disjunction:
             negative_example_idx = np.where(y == 1)[0]
             positive_example_idx = np.where(y == 0)[0]
+        del X, y
 
-        block_size = 1000000
+        block_size = 500000
         n_blocks = int(ceil(float(attribute_classifications.shape[1]) / block_size))
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes and len(binary_attributes) > 0:
 
@@ -130,6 +131,7 @@ class SetCoveringMachine(object):
                     attribute_classifications[negative_example_idx, i * block_size: (i + 1) * block_size], axis=0)
                 self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
             negative_cover_counts = count * -1 + negative_example_idx.shape[0]
+            del count
 
             self._verbose_print("Couting errors on positive examples")
             count = np.zeros(attribute_classifications.shape[1])
@@ -138,26 +140,25 @@ class SetCoveringMachine(object):
                     attribute_classifications[positive_example_idx, i * block_size: (i + 1) * block_size], axis=0)
                 self._verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
             positive_error_counts = count * -1 + positive_example_idx.shape[0]
+            del count
 
             self._verbose_print("Computing attribute utilities")
             utilities = negative_cover_counts - self.p * positive_error_counts
+            del negative_cover_counts, positive_error_counts
 
             best_attribute_idx = np.argmax(utilities)
             best_attribute = binary_attributes[best_attribute_idx]
-
             if self.model_type == conjunction:
                 new_attribute = best_attribute
                 self.model.add(new_attribute)
             elif self.model_type == disjunction:
                 new_attribute = best_attribute.inverse()
                 self.model.add(new_attribute)
-
             if model_append_callback is not None:
                 model_append_callback(new_attribute)
-
             self._verbose_print("Attribute added to the model (Utility: " + str(utilities[best_attribute_idx]) + \
                                     "): " + str(new_attribute))
-            del new_attribute, best_attribute
+            del utilities, new_attribute, best_attribute
 
             self._verbose_print("Discarding covered negative examples")
             negative_example_idx = negative_example_idx[
@@ -165,6 +166,8 @@ class SetCoveringMachine(object):
             self._verbose_print("Discarding misclassified positive examples")
             positive_example_idx = positive_example_idx[
                 attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
+            self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
+            self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))
 
     def predict(self, X):
         """
@@ -189,5 +192,3 @@ class SetCoveringMachine(object):
 
     def __str__(self):
         return _class_to_string(self)
-
-
