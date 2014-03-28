@@ -145,7 +145,6 @@ class SetCoveringMachine(object):
             self._verbose_print("Computing attribute utilities")
             utilities = negative_cover_counts - self.p * positive_error_counts
             del negative_cover_counts, positive_error_counts
-
             best_attribute_idx = np.argmax(utilities)
             best_attribute = binary_attributes[best_attribute_idx]
             if self.model_type == conjunction:
@@ -161,11 +160,27 @@ class SetCoveringMachine(object):
             del utilities, new_attribute, best_attribute
 
             self._verbose_print("Discarding covered negative examples")
-            negative_example_idx = negative_example_idx[
-                attribute_classifications[negative_example_idx, best_attribute_idx] != 0]
+            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
+            # https://github.com/h5py/h5py/issues/425
+            if len(negative_example_idx) > 1:
+                negative_example_idx = negative_example_idx[
+                    attribute_classifications[negative_example_idx, best_attribute_idx] != 0]
+            else:
+                keep = attribute_classifications[negative_example_idx, best_attribute_idx] != 0
+                keep = keep.reshape((1,))
+                negative_example_idx = negative_example_idx[keep]
+
             self._verbose_print("Discarding misclassified positive examples")
-            positive_example_idx = positive_example_idx[
-                attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
+            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
+            # https://github.com/h5py/h5py/issues/425
+            if len(positive_example_idx) > 1:
+                positive_example_idx = positive_example_idx[
+                    attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
+            else:
+                keep = attribute_classifications[positive_example_idx, best_attribute_idx] != 0
+                keep = keep.reshape((1,))
+                positive_example_idx = positive_example_idx[keep]
+
             self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
             self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))
 
