@@ -58,6 +58,9 @@ class SetCoveringMachine(object):
     """
 
     def __init__(self, model_type=conjunction, p=1.0, max_attributes=10, verbose=False):
+        self.verbose = verbose
+        self._verbose_print = partial(_conditional_print, condition=verbose)
+
         if model_type == conjunction:
             self.model = ConjunctionModel()
             self._add_attribute_to_model = self._append_conjunction_model
@@ -69,12 +72,10 @@ class SetCoveringMachine(object):
         else:
             raise ValueError("Unsupported model type.")
         self.model_type = model_type
+        self._verbose_print("Model type is: " + model_type)
 
         self.max_attributes = max_attributes
         self.p = p
-
-        self.verbose = verbose
-        self._verbose_print = partial(_conditional_print, condition=verbose)
 
 
     def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
@@ -155,9 +156,20 @@ class SetCoveringMachine(object):
             utilities = negative_cover_counts - self.p * positive_error_counts
             del negative_cover_counts, positive_error_counts
 
-            self._verbose_print("Finding attribute with the greatest utility")
             best_attribute_idx = np.argmax(utilities)
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
+
+            if self.verbose: # Save the computation if verbose is off
+                equal_utility_idx = np.where(utilities == utilities[best_attribute_idx])[0]
+                self._verbose_print("There are " + str(len(equal_utility_idx) - 1) + \
+                                    " attributes with the same utility.")
+                if len(equal_utility_idx) > 1:
+                    self._verbose_print("These are:")
+                    for idx in equal_utility_idx:
+                        if idx != best_attribute_idx:
+                            self._verbose_print(binary_attributes[idx])
+
+
             appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
             if model_append_callback is not None:
                 model_append_callback(appended_attribute)
