@@ -60,7 +60,7 @@ class H5pyDataset(object):
 
     def __getitem__(self, slice):
         dataset = h5py.File(name=self.file_name, mode="r")[self.dataset_path]
-        data = dataset(slice)
+        data = dataset[slice]
         dataset.file.close()
         return data
 
