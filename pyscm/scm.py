@@ -17,23 +17,58 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import numpy as np
+
+try:
+    import h5py
+except:
+    h5py = None
+
 from functools import partial
 from math import ceil
-
-import numpy as np
+from multiprocessing import Pool
 
 from .utils import _conditional_print, _class_to_string
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
+from .data import H5pyDataset
 
 
-def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
+def _sum_block_h5py(col_block, row_slice, h5py_proxy, verbose=False):
+    block_id = col_block[0]
+    col_slice = col_block[1]
+    _conditional_print("Computing sum of block " + str(block_id), verbose)
+    dataset = h5py.File(h5py_proxy.file_name, mode="r")[h5py_proxy.dataset_path]
+    block_sum = np.sum(dataset[row_slice, col_slice], axis=0)
+    dataset.file.close()
+    return block_sum
+
+
+def _sum_block_numpy(col_block, row_slice, array, verbose=False):
+    block_id = col_block[0]
+    col_slice = col_block[1]
+    _conditional_print("Computing sum of block " + str(block_id), verbose)
+    return np.sum(array[row_slice, col_slice], axis=0)
+
+
+def _block_sum_rows(row_idx, array, block_size=1000, n_cpu=None, verbose=False):
+    _verbose_print = partial(_conditional_print, condition=verbose)
+    pool = Pool(n_cpu)
+
     n_blocks = int(ceil(float(array.shape[1]) / block_size))
-    row_sum = np.zeros(array.shape[1])
-    for i in xrange(n_blocks):
-        row_sum[i * block_size: (i + 1) * block_size] = \
-            np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
-        _conditional_print("Block " + str(i + 1) + " of " + str(n_blocks), verbose)
-    return row_sum
+    _verbose_print("Computing sum of array (" + str(n_blocks) + " blocks) on " + str(pool._processes) + " CPUs.")
+
+    if h5py is not None and isinstance(array, H5pyDataset):
+        _verbose_print("Array is an H5py dataset")
+        map_sum = partial(_sum_block_h5py, h5py_proxy=array, row_slice=row_idx, verbose=verbose)
+    else:
+        _verbose_print("Array is a numpy array")
+        map_sum = partial(_sum_block_numpy, array=array, row_slice=row_idx, verbose=verbose)
+
+    blocks = ((i, slice(i * block_size, (i + 1) * block_size)) for i in xrange(n_blocks))
+    _verbose_print("Mapping")
+    map_res = pool.map(map_sum, blocks)
+    _verbose_print("Reducing")
+    return np.hstack(map_res)
 
 
 class SetCoveringMachine(object):
@@ -79,7 +114,7 @@ class SetCoveringMachine(object):
 
 
     def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
-            cover_count_block_size=1000):
+            cover_count_block_size=1000, n_cpu=None):
         """
         Fit a SCM model.
 
@@ -96,7 +131,7 @@ class SetCoveringMachine(object):
             The feature vectors associated to the training examples. If X is None, then attribute_classifications is
             expected not to be None.
 
-        attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
+        attribute_classifications: numpy_array or H5PyDataset, shape=(n_binary_attributes, n_examples), default=None
             The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
             classification process. If the value is None, the classifications will be computed using X. Therefore, if
             attribute_classifications is None, X is expected.
@@ -107,11 +142,15 @@ class SetCoveringMachine(object):
         cover_count_block_size: int, default=1000
             The maximum number of attributes for which covers are counted at one time. Use this to limit memory usage.
 
+        n_cpu: int, default=None
+            The number of CPUs used to count covers. If None, all detected CPUs will be used.
+
         Notes:
         ------
         * HDF5: The SCM can learn from a great number of attributes. Storing them in memory can require a large amount
                 of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
-                We try to prevent loading the entire dataset into memory. The user is assumed to be using h5py.
+                We try to prevent loading the entire dataset into memory. Please use the H5PyDataset class.
+
         """
         if X is None and attribute_classifications is None:
             raise ValueError("X or attribute_classifications must have a value.")
@@ -144,12 +183,14 @@ class SetCoveringMachine(object):
             negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
                                                                                     attribute_classifications,
                                                                                     cover_count_block_size,
+                                                                                    n_cpu,
                                                                                     self.verbose)
 
             self._verbose_print("Counting errors on positive examples")
             positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
                                                                                     attribute_classifications,
                                                                                     cover_count_block_size,
+                                                                                    n_cpu,
                                                                                     self.verbose)
 
             self._verbose_print("Computing attribute utilities")
@@ -159,7 +200,7 @@ class SetCoveringMachine(object):
             best_attribute_idx = np.argmax(utilities)
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
 
-            if self.verbose: # Save the computation if verbose is off
+            if self.verbose:  # Save the computation if verbose is off
                 equal_utility_idx = np.where(utilities == utilities[best_attribute_idx])[0]
                 self._verbose_print("There are " + str(len(equal_utility_idx) - 1) + \
                                     " attributes with the same utility.")
@@ -168,7 +209,6 @@ class SetCoveringMachine(object):
                     for idx in equal_utility_idx:
                         if idx != best_attribute_idx:
                             self._verbose_print(binary_attributes[idx])
-
 
             appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
             if model_append_callback is not None:
