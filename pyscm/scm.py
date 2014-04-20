@@ -26,49 +26,23 @@ except:
 
 from functools import partial
 from math import ceil
-from multiprocessing import Pool
 
 from .utils import _conditional_print, _class_to_string
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
-from .data import H5pyDataset
 
 
-def _sum_block_h5py(col_block, row_slice, h5py_proxy, verbose=False):
-    block_id = col_block[0]
-    col_slice = col_block[1]
-    _conditional_print("Computing sum of block " + str(block_id), verbose)
-    dataset = h5py.File(h5py_proxy.file_name, mode="r")[h5py_proxy.dataset_path]
-    block_sum = np.sum(dataset[row_slice, col_slice], axis=0)
-    dataset.file.close()
-    return block_sum
-
-
-def _sum_block_numpy(col_block, row_slice, array, verbose=False):
-    block_id = col_block[0]
-    col_slice = col_block[1]
-    _conditional_print("Computing sum of block " + str(block_id), verbose)
-    return np.sum(array[row_slice, col_slice], axis=0)
-
-
-def _block_sum_rows(row_idx, array, block_size=1000, n_cpu=None, verbose=False):
+def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     _verbose_print = partial(_conditional_print, condition=verbose)
-    pool = Pool(n_cpu)
 
     n_blocks = int(ceil(float(array.shape[1]) / block_size))
-    _verbose_print("Computing sum of array (" + str(n_blocks) + " blocks) on " + str(pool._processes) + " CPUs.")
+    _verbose_print("Computing sum of array (" + str(n_blocks) + " blocks)")
 
-    if h5py is not None and isinstance(array, H5pyDataset):
-        _verbose_print("Array is an H5py dataset")
-        map_sum = partial(_sum_block_h5py, h5py_proxy=array, row_slice=row_idx, verbose=verbose)
-    else:
-        _verbose_print("Array is a numpy array")
-        map_sum = partial(_sum_block_numpy, array=array, row_slice=row_idx, verbose=verbose)
+    sum_res = np.zeros(array.shape[1])
+    for i in xrange(n_blocks):
+        _verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
+        sum_res[i * block_size: (i + 1) * block_size] = np.sum(array[:, i * block_size: (i + 1) * block_size], axis=0)
 
-    blocks = ((i, slice(i * block_size, (i + 1) * block_size)) for i in xrange(n_blocks))
-    _verbose_print("Mapping")
-    map_res = pool.map(map_sum, blocks)
-    _verbose_print("Reducing")
-    return np.hstack(map_res)
+    return sum_res
 
 
 class SetCoveringMachine(object):
@@ -114,7 +88,7 @@ class SetCoveringMachine(object):
 
 
     def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
-            cover_count_block_size=1000, n_cpu=None):
+            cover_count_block_size=1000):
         """
         Fit a SCM model.
 
@@ -132,18 +106,15 @@ class SetCoveringMachine(object):
             expected not to be None.
 
         attribute_classifications: numpy_array or H5PyDataset, shape=(n_binary_attributes, n_examples), default=None
-            The binary attribute labels (0 or 1) assigned to the examples in X. This can be used to precompute the long
-            classification process. If the value is None, the classifications will be computed using X. Therefore, if
-            attribute_classifications is None, X is expected.
+            The labels (0 or 1) assigned to the examples in X assigned by each binary attribute individually. This can
+            be used to precompute the long classification process. If the value is None, the classifications will be
+            computed using X. Thus, if attribute_classifications is None, X is expected not to be None.
 
         model_append_callback: function, arguments: new_attribute=instance_of(BinaryAttribute), default=None
             A function which is called when a new binary attribute is appended to the model.
 
         cover_count_block_size: int, default=1000
             The maximum number of attributes for which covers are counted at one time. Use this to limit memory usage.
-
-        n_cpu: int, default=None
-            The number of CPUs used to count covers. If None, all detected CPUs will be used.
 
         Notes:
         ------
@@ -183,14 +154,12 @@ class SetCoveringMachine(object):
             negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
                                                                                     attribute_classifications,
                                                                                     cover_count_block_size,
-                                                                                    n_cpu,
                                                                                     self.verbose)
 
             self._verbose_print("Counting errors on positive examples")
             positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
                                                                                     attribute_classifications,
                                                                                     cover_count_block_size,
-                                                                                    n_cpu,
                                                                                     self.verbose)
 
             self._verbose_print("Computing attribute utilities")
