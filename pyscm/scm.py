@@ -40,7 +40,7 @@ def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     sum_res = np.zeros(array.shape[1])
     for i in xrange(n_blocks):
         _verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
-        sum_res[i * block_size: (i + 1) * block_size] = np.sum(array[:, i * block_size: (i + 1) * block_size], axis=0)
+        sum_res[i * block_size: (i + 1) * block_size] = np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
 
     return sum_res
 
