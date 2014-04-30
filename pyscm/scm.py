@@ -53,7 +53,7 @@ class SetCoveringMachine(object):
 
     Parameters:
     -----------
-    model_type: string, {"conjunction", "disjunction"}, default="conjunction"
+    model_type: pyscm.model.conjunction or pyscm.model.disjunction, default=pyscm.model.conjunction
         The type of model to be built.
 
     p: float, default=1.0
