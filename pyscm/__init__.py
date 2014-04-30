@@ -18,3 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 __all__ = ["binary_attributes", "model", "scm"]
+
+from . import scm
+from . import model
+from . import binary_attributes
