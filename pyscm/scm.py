@@ -149,7 +149,7 @@ class SetCoveringMachine(object):
                                  "binary_attributes.")
         del X, y
 
-        while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes and len(binary_attributes) > 0:
+        while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
             self._verbose_print("Counting covered negative examples")
             negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
                                                                                     attribute_classifications,
