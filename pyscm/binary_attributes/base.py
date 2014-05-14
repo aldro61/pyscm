@@ -89,3 +89,27 @@ class BinaryAttributeMixin(object):
 
     def __str__(self):
         return _class_to_string(self)
+
+
+class BinaryAttributeListMixin(object):
+    """
+    A binary attribute list mixin class
+
+    Parameters:
+    -----------
+    example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
+            A list containing an element of any type for each example on which the attribute depends.
+    """
+
+    def __init__(self):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    def __getitem__(self, item_idx):
+        raise NotImplementedError()
+
+    def classify(self, X):
+        raise NotImplementedError()
+
