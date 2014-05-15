@@ -19,11 +19,6 @@
 """
 import numpy as np
 
-try:
-    import h5py
-except:
-    h5py = None
-
 from functools import partial
 from math import ceil
 
@@ -105,7 +100,7 @@ class SetCoveringMachine(object):
             The feature vectors associated to the training examples. If X is None, then attribute_classifications is
             expected not to be None.
 
-        attribute_classifications: numpy_array or H5PyDataset, shape=(n_binary_attributes, n_examples), default=None
+        attribute_classifications: numpy_array, shape=(n_binary_attributes, n_examples), default=None
             The labels (0 or 1) assigned to the examples in X assigned by each binary attribute individually. This can
             be used to precompute the long classification process. If the value is None, the classifications will be
             computed using X. Thus, if attribute_classifications is None, X is expected not to be None.
@@ -120,7 +115,7 @@ class SetCoveringMachine(object):
         ------
         * HDF5: The SCM can learn from a great number of attributes. Storing them in memory can require a large amount
                 of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
-                We try to prevent loading the entire dataset into memory. Please use the H5PyDataset class.
+                We try to prevent loading the entire dataset into memory.
 
         """
         if X is None and attribute_classifications is None:
@@ -139,9 +134,7 @@ class SetCoveringMachine(object):
         self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
             self._verbose_print("Classifying the examples with the binary attributes")
-            attribute_classifications = np.zeros((X.shape[0], len(binary_attributes)), dtype=np.uint8)
-            for i, a in enumerate(binary_attributes):
-                attribute_classifications[:, i] = a.classify(X)
+            attribute_classifications = binary_attributes.classify(X)
         else:
             self._verbose_print("Binary attribute classifications were precomputed")
             if attribute_classifications.shape[1] != len(binary_attributes):

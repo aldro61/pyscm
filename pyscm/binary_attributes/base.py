@@ -89,3 +89,35 @@ class BinaryAttributeMixin(object):
 
     def __str__(self):
         return _class_to_string(self)
+
+
+class BinaryAttributeListMixin(object):
+    """
+    A binary attribute list mixin class
+    """
+
+    def __init__(self):
+        pass
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    def __getitem__(self, item_idx):
+        raise NotImplementedError()
+
+    def classify(self, X):
+        """
+        Classifies a set of examples using the binary attribute.
+
+        Parameters:
+        -----------
+        X: numpy_array, (n_examples, n_features)
+            The feature vectors of examples to classify.
+
+        Returns:
+        --------
+        attribute_classifications: numpy_array, (n_examples, n_binary_attributes)
+            List of labels assigned to each example classified according to their binary attributes.
+        """
+        raise NotImplementedError()
+
