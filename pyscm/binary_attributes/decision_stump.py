@@ -124,7 +124,7 @@ class DecisionStumpBinaryAttributeList(BinaryAttributeListMixin):
         return self.feature_idx.shape[0]
 
     def __getitem__(self, item_idx):
-        return DecisionStump(self.feature_idx[item_idx], self.directionst[item_idx], self.thresholds[item_idx],
+        return DecisionStump(self.feature_idx[item_idx], self.directions[item_idx], self.thresholds[item_idx],
                              self.example_dependencies[item_idx])
 
     def classify(self, X):
