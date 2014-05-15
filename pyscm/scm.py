@@ -139,9 +139,7 @@ class SetCoveringMachine(object):
         self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
             self._verbose_print("Classifying the examples with the binary attributes")
-            attribute_classifications = np.zeros((X.shape[0], len(binary_attributes)), dtype=np.uint8)
-            for i, a in enumerate(binary_attributes):
-                attribute_classifications[:, i] = a.classify(X)
+            attribute_classifications = binary_attributes.classify(X)
         else:
             self._verbose_print("Binary attribute classifications were precomputed")
             if attribute_classifications.shape[1] != len(binary_attributes):

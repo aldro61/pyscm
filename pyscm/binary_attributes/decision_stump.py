@@ -113,7 +113,7 @@ class DecisionStumpBinaryAttributeList(BinaryAttributeListMixin):
 
     def __init__(self, feature_idx, directions, thresholds, example_dependencies=[]):
         if len(set(map(len, (feature_idx, directions, thresholds, example_dependencies)))) != 1:
-            raise ValueError("DecisionStumpAttributeList constructor: The input lists length should be equal.")
+            raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be equal.")
 
         self.feature_idx = np.asarray(feature_idx)
         self.directions= np.asarray(directions)
