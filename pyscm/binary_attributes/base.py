@@ -97,7 +97,7 @@ class BinaryAttributeListMixin(object):
     """
 
     def __init__(self):
-        raise NotImplementedError()
+        pass
 
     def __len__(self):
         raise NotImplementedError()

@@ -23,6 +23,7 @@ import numpy as np
 from .base import BinaryAttributeMixin
 from .base import BinaryAttributeListMixin
 
+
 class DecisionStump(BinaryAttributeMixin):
     """
     A decision stump binary attribute.
@@ -116,9 +117,11 @@ class DecisionStumpBinaryAttributeList(BinaryAttributeListMixin):
             raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be equal.")
 
         self.feature_idx = np.asarray(feature_idx)
-        self.directions= np.asarray(directions)
+        self.directions = np.asarray(directions)
         self.thresholds = np.asarray(thresholds)
         self.example_dependencies = np.asarray(example_dependencies)
+
+        BinaryAttributeListMixin.__init__(self)
 
     def __len__(self):
         return self.feature_idx.shape[0]

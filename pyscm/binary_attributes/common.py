@@ -36,6 +36,8 @@ class DefaultBinaryAttributeList(BinaryAttributeListMixin):
     def __init__(self, binary_attributes):
         self.binary_attributes = binary_attributes
 
+        BinaryAttributeListMixin.__init__(self)
+
     def __len__(self):
         return len(self.binary_attributes)
 

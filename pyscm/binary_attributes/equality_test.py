@@ -23,6 +23,7 @@ import numpy as np
 from .base import BinaryAttributeMixin
 from .base import BinaryAttributeListMixin
 
+
 class EqualityTest(BinaryAttributeMixin):
     """
     A binary attribute that checks if a feature has a given value.
@@ -63,7 +64,7 @@ class EqualityTest(BinaryAttributeMixin):
         labels: numpy_array, (n_examples,)
             Labels assigned to each example by the test.
         """
-        if self.outcome == True:
+        if self.outcome:
             labels = np.asarray(X[:, self.feature_idx] == self.value, dtype=np.int8)
         else:
             labels = np.asarray(X[:, self.feature_idx] != self.value, dtype=np.int8)
@@ -116,12 +117,14 @@ class EqualityTestBinaryAttributeList(BinaryAttributeListMixin):
         self.outcomes = np.asarray(outcomes)
         self.example_dependencies = np.asarray(example_dependencies)
 
+        BinaryAttributeListMixin.__init__(self)
+
     def __len__(self):
         return self.feature_idx.shape[0]
 
     def __getitem__(self, item_idx):
         return EqualityTest(self.feature_idx[item_idx], self.values[item_idx], self.outcomes[item_idx],
-                             self.example_dependencies[item_idx])
+                            self.example_dependencies[item_idx])
 
     def classify(self, X):
         """
@@ -138,5 +141,5 @@ class EqualityTestBinaryAttributeList(BinaryAttributeListMixin):
             List of labels assigned to each example by the equality test.
         """
         attribute_classifications = np.logical_xor(X[:, self.feature_idx] == self.values, self.outcomes)
-        np.logical_not(attribute_classifications, out = attribute_classifications)
+        np.logical_not(attribute_classifications, out=attribute_classifications)
         return np.asarray(attribute_classifications, dtype=np.int8)
