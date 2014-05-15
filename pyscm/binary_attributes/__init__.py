@@ -18,4 +18,4 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from . import commun, decision_stump, equality_test
+from . import common, decision_stump, equality_test

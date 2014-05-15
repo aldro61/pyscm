@@ -22,6 +22,7 @@ import numpy as np
 
 from .base import BinaryAttributeListMixin
 
+
 class DefaultBinaryAttributeList(BinaryAttributeListMixin):
     """
     A default binary attribute list.
