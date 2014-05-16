@@ -20,6 +20,7 @@
 
 import numpy as np
 
+from math import ceil
 from .base import BinaryAttributeMixin
 from .base import BinaryAttributeListMixin
 
@@ -33,21 +34,22 @@ class DecisionStump(BinaryAttributeMixin):
     feature_idx: int
         The index of the feature used to create the decision stump in the example vectors.
 
-    direction: int, {-1, +1}
-        The direction of the decision stump. 1 stands for feature_value > threshold, whereas -1 stands for
+    direction: int, value in {-1, +1}
+        The direction of the decision stump. 1 stands for feature_value > threshold, and -1 stands for
         feature_value < threshold.
 
     threshold: float
         The decision stump's threshold value for discriminating positive and negative examples.
 
     example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
-            A list containing an element of any type for each example on which the attribute depends.
+            A list containing an identifier for each training example on which the decision stump depends.
     """
 
     def __init__(self, feature_idx, direction, threshold, example_dependencies=[]):
         if direction != 1 and direction != -1:
             raise ValueError("Invalid decision stump direction.")
 
+        #TODO: check that direction is -1 or 1
         self.feature_idx = feature_idx
         self.direction = direction
         self.threshold = threshold
@@ -61,7 +63,7 @@ class DecisionStump(BinaryAttributeMixin):
         Parameters:
         -----------
         X: numpy_array, (n_examples, n_features)
-            The feature vectors of examples to classify.
+            The feature vectors of the examples to classify.
 
         Returns:
         --------
@@ -69,9 +71,9 @@ class DecisionStump(BinaryAttributeMixin):
             Labels assigned to each example by the decision stump.
         """
         if self.direction == 1:
-            labels = np.array(X[:, self.feature_idx] > self.threshold, dtype=np.int8)
+            labels = np.asarray(X[:, self.feature_idx] > self.threshold, dtype=np.uint8)
         else:
-            labels = np.array(X[:, self.feature_idx] < self.threshold, dtype=np.int8)
+            labels = np.asarray(X[:, self.feature_idx] < self.threshold, dtype=np.uint8)
         return labels
 
     def inverse(self):
@@ -85,41 +87,55 @@ class DecisionStump(BinaryAttributeMixin):
         inverse: DecisionStump
             A decision stump that is the inverse of self.
         """
-        return DecisionStump(self.feature_idx, self.direction * -1, self.threshold, self.example_dependencies)
+        return DecisionStump(feature_idx=self.feature_idx,
+                             direction=self.direction * -1,
+                             threshold=self.threshold,
+                             example_dependencies=self.example_dependencies)
 
     def __str__(self):
-        return "x[" + str(self.feature_idx) + "] " + (">" if self.direction == 1 else "<=") + " " + str(self.threshold)
+        return "x[" + str(self.feature_idx) + "] " + (">" if self.direction == 1 else "<") + " " + str(self.threshold)
 
 
-class DecisionStumpBinaryAttributeList(BinaryAttributeListMixin):
+class DecisionStumpList(BinaryAttributeListMixin):
     """
-    A decision stump binary attribute list.
+    A binary attribute list specially designed for decision stumps.
 
     Parameters:
     -----------
-    feature_idx: numpy_array, shape=(n_indexes,)
-        A list of indexes of the feature used to create the decision stump in the example vectors and to classify a set
-        of examples.
+    feature_idx: numpy_array, shape=(n_decision_stumps,)
+        The feature indexes used to define each decision stump.
 
-    directions: numpy_array, shape=(n_directions,)
-        A list of directions of the decision stump. Possible values {-1, +1}: 1 stands for feature_value > threshold,
-        whereas -1 stands for feature_value < threshold.
+    directions: numpy_array, shape=(n_decision_stumps,)
+        The directions used to define each decision stump.
+        Possible values {-1, +1}: 1 stands for feature_value > threshold and -1 stands for feature_value < threshold.
 
-    thresholds: numpy_array, shape=(n_thresholds,)
-        A list of decision stump's threshold values for discriminating positive and negative examples.
+    thresholds: numpy_array, shape=(n_decision_stumps,)
+        The thresholds used to define each decision stump. Decision stumps use thresholds to discriminate positive and
+        negative examples.
 
-    example_dependencies: array_like, shape=(n_items, n_example_dependencies), default=[]
-            A list of lists of elements of any type for each example on which the attribute depends.
+    example_dependencies: list of lists, default=None
+            A list of lists of containing an identifier for each examples on which the decision stumps depend on.
+
+    Note:
+    -----
+    This class uses lazy generation of the DecisionStump objects to reduce memory consumption.
     """
 
-    def __init__(self, feature_idx, directions, thresholds, example_dependencies=[]):
-        if len(set(map(len, (feature_idx, directions, thresholds, example_dependencies)))) != 1:
-            raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be equal.")
+    def __init__(self, feature_idx, directions, thresholds, example_dependencies=None):
+        if example_dependencies is None:
+            if len(set(map(len, (feature_idx, directions, thresholds)))) != 1:
+                raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be " +\
+                                 "equal.")
+        else:
+            if len(set(map(len, (feature_idx, directions, thresholds, example_dependencies)))) != 1:
+                raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be " +\
+                                 "equal.")
 
+        #TODO: check that directions unique is only 1 or -1
         self.feature_idx = np.asarray(feature_idx)
-        self.directions = np.asarray(directions)
+        self.directions = np.asarray(directions, np.int8)
         self.thresholds = np.asarray(thresholds)
-        self.example_dependencies = np.asarray(example_dependencies)
+        self.example_dependencies = example_dependencies
 
         BinaryAttributeListMixin.__init__(self)
 
@@ -127,24 +143,33 @@ class DecisionStumpBinaryAttributeList(BinaryAttributeListMixin):
         return self.feature_idx.shape[0]
 
     def __getitem__(self, item_idx):
-        return DecisionStump(self.feature_idx[item_idx], self.directions[item_idx], self.thresholds[item_idx],
-                             self.example_dependencies[item_idx])
+        if item_idx > len(self) - 1:
+            raise IndexError()
+
+        return DecisionStump(feature_idx=self.feature_idx[item_idx],
+                             direction=self.directions[item_idx],
+                             threshold=self.thresholds[item_idx],
+                             example_dependencies=[] if self.example_dependencies is None \
+                                 else self.example_dependencies[item_idx])
 
     def classify(self, X):
         """
-        Classifies a set of examples using the elements of decision stump.
+        Classifies a set of examples using the decision stumps in the list.
 
         Parameters:
         -----------
         X: numpy_array, (n_examples, n_features)
-            The feature vectors of examples to classify.
+            The feature vectors of the examples to classify.
 
         Returns:
         --------
         attribute_classifications: numpy_array, (n_examples, n_decision_stumps)
-            List of labels assigned to each example by the decision stump.
+            A matrix containing the labels assigned to each example by each decision stump individually.
         """
-        attribute_classifications = (X[:, self.feature_idx] - self.thresholds) * self.directions
-        attribute_classifications[attribute_classifications > 0] = 1
-        attribute_classifications[attribute_classifications <= 0] = 0
+        attribute_classifications = np.zeros((X.shape[0], len(self)), dtype=np.uint8)
+        block_size = 1000 #TODO: Make this a parameter or compute an optimal value based on memory usage
+        for i in xrange(int(ceil(float(len(self))/block_size))):
+            tmp = (X[:, self.feature_idx[i*block_size:(i+1)*block_size]] - self.thresholds[i*block_size:(i+1)*block_size]) * self.directions[i*block_size:(i+1)*block_size]
+            attribute_classifications[:, i*block_size:(i+1)*block_size][tmp > 0] = 1
+            attribute_classifications[:, i*block_size:(i+1)*block_size][tmp <= 0] = 0
         return attribute_classifications
