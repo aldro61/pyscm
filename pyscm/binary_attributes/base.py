@@ -28,7 +28,7 @@ class BinaryAttributeMixin(object):
     Parameters:
     -----------
     example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
-            A list containing an element of any type for each example on which the attribute depends.
+            A list containing an identifier for each training example on which the attribute depends.
     """
 
     def __init__(self, example_dependencies=[]):
@@ -107,7 +107,7 @@ class BinaryAttributeListMixin(object):
 
     def classify(self, X):
         """
-        Classifies a set of examples using the binary attribute.
+        Classifies a set of examples using the binary attributes in the list.
 
         Parameters:
         -----------
@@ -117,7 +117,7 @@ class BinaryAttributeListMixin(object):
         Returns:
         --------
         attribute_classifications: numpy_array, (n_examples, n_binary_attributes)
-            List of labels assigned to each example classified according to their binary attributes.
+            A matrix containing the labels assigned to each example by each binary attribute individually.
         """
         raise NotImplementedError()
 

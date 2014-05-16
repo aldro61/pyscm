@@ -25,17 +25,23 @@ from .base import BinaryAttributeListMixin
 
 class DefaultBinaryAttributeList(BinaryAttributeListMixin):
     """
-    A default binary attribute list.
+    A binary attribute list that can be used with any type of binary attributes.
 
     Parameters:
     -----------
-    binary_attributes: numpy_array, shape=(n_binary_attributes,)
+    binary_attributes: list, len=n_binary_attributes
         A list of unique binary attributes to be used to build the model.
+
+    Note:
+    -----
+    This type of list works for any binary attribute, although using lists specially designed for a type of binary
+    attribute can significantly reduce memory usage. This is achieved by using lazy generation of the binary attributes,
+    as some binary attributes can be defined by a few parameters which are far less expensive to store than instances of
+    classes.
     """
 
     def __init__(self, binary_attributes):
         self.binary_attributes = binary_attributes
-
         BinaryAttributeListMixin.__init__(self)
 
     def __len__(self):
@@ -46,12 +52,12 @@ class DefaultBinaryAttributeList(BinaryAttributeListMixin):
 
     def classify(self, X):
         """
-        Classifies a set of examples using the elements of binary attributes.
+        Classifies a set of examples using the binary attributes in the list.
 
         Parameters:
         -----------
         X: numpy_array, (n_examples, n_features)
-            The feature vectors of examples to classify.
+            The feature vectors of the examples to classify.
 
         Returns:
         --------
