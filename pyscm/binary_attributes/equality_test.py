@@ -117,16 +117,17 @@ class EqualityTestList(BinaryAttributeListMixin):
     This class uses lazy generation of the EqualityTest objects to reduce memory consumption.
     """
 
-    def __init__(self, feature_idx, values, outcomes=True, example_dependencies=None):
-        if self.example_dependencies is None:
+    def __init__(self, feature_idx, values, outcomes, example_dependencies=None):
+        if example_dependencies is None:
             if len(set(map(len, (feature_idx, values, outcomes)))) != 1:
-                raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be equal.")
-            else:
-                if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
-                    raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be " +\
-                                     "equal.")
+                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
+        else:
+            if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
+                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
 
-        #TODO: check that outcome unique is only true and false
+        if not all((value == True or value == False) for value in outcomes):
+            raise ValueError('The outcomes list  should\'t contain the values other than {True, False}')
+
         self.feature_idx = np.asarray(feature_idx)
         self.values = np.asarray(values)
         self.outcomes = np.asarray(outcomes, np.bool)

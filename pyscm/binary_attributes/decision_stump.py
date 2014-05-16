@@ -124,14 +124,14 @@ class DecisionStumpList(BinaryAttributeListMixin):
     def __init__(self, feature_idx, directions, thresholds, example_dependencies=None):
         if example_dependencies is None:
             if len(set(map(len, (feature_idx, directions, thresholds)))) != 1:
-                raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be " +\
-                                 "equal.")
+                raise ValueError("DecisionStumpList constructor: The input lists length should be equal.")
         else:
             if len(set(map(len, (feature_idx, directions, thresholds, example_dependencies)))) != 1:
-                raise ValueError("DecisionStumpBinaryAttributeList constructor: The input lists length should be " +\
-                                 "equal.")
+                raise ValueError("DecisionStumpList constructor: The input lists length should be equal.")
 
-        #TODO: check that directions unique is only 1 or -1
+        if not all((value == 1 or value == -1) for value in directions):
+            raise ValueError('The directions list should\'t contain the values other than {-1, +1}')
+
         self.feature_idx = np.asarray(feature_idx)
         self.directions = np.asarray(directions, np.int8)
         self.thresholds = np.asarray(thresholds)
