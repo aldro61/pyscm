@@ -36,16 +36,17 @@ class EqualityTest(BinaryAttributeMixin):
     value: float
         The value for discriminating positive and negative examples.
 
-    value: bool, default=True
+    outcome: bool, default=True
         The outcome of the test if the examples feature at index feature_idx equals to value.
 
     example_dependencies: array_like, shape=(n_example_dependencies,), default=[]
-            A list containing an element of any type for each example on which the attribute depends.
+            A list containing an identifier for each training example on which the attribute depends.
     """
 
     def __init__(self, feature_idx, value, outcome=True, example_dependencies=[]):
         self.feature_idx = feature_idx
         self.value = value
+        #TODO: check that outcome is True or False
         self.outcome = outcome
 
         BinaryAttributeMixin.__init__(self, example_dependencies)
@@ -57,7 +58,7 @@ class EqualityTest(BinaryAttributeMixin):
         Parameters:
         -----------
         X: numpy_array, (n_examples, n_features)
-            The feature vectors of examples to classify.
+            The feature vectors of the examples to classify.
 
         Returns:
         --------
@@ -65,9 +66,9 @@ class EqualityTest(BinaryAttributeMixin):
             Labels assigned to each example by the test.
         """
         if self.outcome:
-            labels = np.asarray(X[:, self.feature_idx] == self.value, dtype=np.int8)
+            labels = np.asarray(X[:, self.feature_idx] == self.value, dtype=np.uint8)
         else:
-            labels = np.asarray(X[:, self.feature_idx] != self.value, dtype=np.int8)
+            labels = np.asarray(X[:, self.feature_idx] != self.value, dtype=np.uint8)
 
         return labels
 
@@ -82,40 +83,54 @@ class EqualityTest(BinaryAttributeMixin):
         inverse: EqualityTest
             A decision stump that is the inverse of self.
         """
-        return EqualityTest(self.feature_idx, self.value, False, self.example_dependencies)
+        return EqualityTest(feature_idx=self.feature_idx,
+                            value=self.value,
+                            outcome=False,
+                            example_dependencies=self.example_dependencies)
 
     def __str__(self):
         return "x[" + str(self.feature_idx) + "] " + ("==" if self.outcome == True else "!=") + " " + str(self.value)
 
 
-class EqualityTestBinaryAttributeList(BinaryAttributeListMixin):
+class EqualityTestList(BinaryAttributeListMixin):
     """
-    A equality test binary attribute list.
+    A binary attribute list specially designed for equality tests.
 
     Parameters:
     -----------
     feature_idx: numpy_array, shape=(n_indexes,)
-        A list of indexes of the feature used to create the equality test in the example vectors and to classify a set
-        of examples.
+        The feature indexes used to define each equality test.
 
     values: numpy_array, shape=(n_values,)
-        A list of values for discriminating positive and negative examples.
+        The values used to define each equality test. Equality tests use these values to discriminate positive and
+        negative examples.
 
     outcomes: numpy_array, shape=(n_outcomes,)
-        A list of outcomes of the test if the examples feature at index feature_idx equals to value.
+        The outcomes of each equality test. The outcome defines whether the test is feature_value == value or
+        feature_value != value.
 
-    example_dependencies: array_like, shape=(n_items, n_example_dependencies), default=[]
-            A list of lists of elements of any type for each example on which the attribute depends.
+    example_dependencies: list of lists, default=None
+            A list of lists of containing an identifier for each examples on which the equality tests depend on.
+
+    Note:
+    -----
+    This class uses lazy generation of the EqualityTest objects to reduce memory consumption.
     """
 
-    def __init__(self, feature_idx, values, outcomes=True, example_dependencies=[]):
-        if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
-            raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be equal.")
+    def __init__(self, feature_idx, values, outcomes=True, example_dependencies=None):
+        if self.example_dependencies is None:
+            if len(set(map(len, (feature_idx, values, outcomes)))) != 1:
+                raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be equal.")
+            else:
+                if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
+                    raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be " +\
+                                     "equal.")
 
+        #TODO: check that outcome unique is only true and false
         self.feature_idx = np.asarray(feature_idx)
         self.values = np.asarray(values)
-        self.outcomes = np.asarray(outcomes)
-        self.example_dependencies = np.asarray(example_dependencies)
+        self.outcomes = np.asarray(outcomes, np.bool)
+        self.example_dependencies = example_dependencies
 
         BinaryAttributeListMixin.__init__(self)
 
@@ -123,23 +138,30 @@ class EqualityTestBinaryAttributeList(BinaryAttributeListMixin):
         return self.feature_idx.shape[0]
 
     def __getitem__(self, item_idx):
-        return EqualityTest(self.feature_idx[item_idx], self.values[item_idx], self.outcomes[item_idx],
-                            self.example_dependencies[item_idx])
+        if item_idx > len(self) - 1:
+            raise IndexError()
+
+        return EqualityTest(feature_idx=self.feature_idx[item_idx],
+                            value=self.values[item_idx],
+                            outcome=self.outcomes[item_idx],
+                            example_dependencies=[] if self.example_dependencies is None \
+                                else self.example_dependencies[item_idx])
 
     def classify(self, X):
         """
-        Classifies a set of examples using the elements of equality test.
+        Classifies a set of examples using the equality tests in the list.
 
         Parameters:
         -----------
         X: numpy_array, (n_examples, n_features)
-            The feature vectors of examples to classify.
+            The feature vectors of the examples to classify.
 
         Returns:
         --------
         attribute_classifications: numpy_array, (n_examples, n_decision_stumps)
-            List of labels assigned to each example by the equality test.
+            A matrix containing the labels assigned to each example by each equality test individually.
         """
+        #TODO: use blocks here too, because X[:, self.feature_idx] uses a lot of useless memory (see decision_stump.py)
         attribute_classifications = np.logical_xor(X[:, self.feature_idx] == self.values, self.outcomes)
         np.logical_not(attribute_classifications, out=attribute_classifications)
         return np.asarray(attribute_classifications, dtype=np.int8)
