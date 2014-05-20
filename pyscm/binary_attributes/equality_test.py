@@ -169,7 +169,7 @@ class EqualityTestList(BinaryAttributeListMixin):
             tmp = np.logical_xor(
                 X[:, self.feature_idx[i*block_size:(i+1)*block_size]] == self.values[i*block_size:(i+1)*block_size],
                 self.outcomes[i*block_size:(i+1)*block_size])
-            np.logical_not(tmp, out=attribute_classifications[i*block_size:(i+1)*block_size])
+            np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
         return attribute_classifications
 
 
