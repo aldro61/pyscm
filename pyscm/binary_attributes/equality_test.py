@@ -20,6 +20,7 @@
 
 import numpy as np
 
+from math import ceil
 from .base import BinaryAttributeMixin
 from .base import BinaryAttributeListMixin
 
@@ -117,16 +118,17 @@ class EqualityTestList(BinaryAttributeListMixin):
     This class uses lazy generation of the EqualityTest objects to reduce memory consumption.
     """
 
-    def __init__(self, feature_idx, values, outcomes=True, example_dependencies=None):
-        if self.example_dependencies is None:
+    def __init__(self, feature_idx, values, outcomes, example_dependencies=None):
+        if example_dependencies is None:
             if len(set(map(len, (feature_idx, values, outcomes)))) != 1:
-                raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be equal.")
-            else:
-                if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
-                    raise ValueError("EqualityTestBinaryAttributeList constructor: The input lists length should be " +\
-                                     "equal.")
+                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
+        else:
+            if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
+                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
 
-        #TODO: check that outcome unique is only true and false
+        if not all((value == True or value == False) for value in outcomes):
+            raise ValueError('The outcomes list  should\'t contain the values other than {True, False}')
+
         self.feature_idx = np.asarray(feature_idx)
         self.values = np.asarray(values)
         self.outcomes = np.asarray(outcomes, np.bool)
@@ -161,7 +163,13 @@ class EqualityTestList(BinaryAttributeListMixin):
         attribute_classifications: numpy_array, (n_examples, n_decision_stumps)
             A matrix containing the labels assigned to each example by each equality test individually.
         """
-        #TODO: use blocks here too, because X[:, self.feature_idx] uses a lot of useless memory (see decision_stump.py)
-        attribute_classifications = np.logical_xor(X[:, self.feature_idx] == self.values, self.outcomes)
-        np.logical_not(attribute_classifications, out=attribute_classifications)
-        return np.asarray(attribute_classifications, dtype=np.int8)
+        attribute_classifications = np.zeros((X.shape[0], len(self)), dtype=np.uint8)
+        block_size = 1000 #TODO: Make this a parameter or compute an optimal value based on memory usage
+        for i in xrange(int(ceil(float(len(self))/block_size))):
+            tmp = np.logical_xor(
+                X[:, self.feature_idx[i*block_size:(i+1)*block_size]] == self.values[i*block_size:(i+1)*block_size],
+                self.outcomes[i*block_size:(i+1)*block_size])
+            np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
+        return attribute_classifications
+
+
