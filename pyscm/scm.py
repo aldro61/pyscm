@@ -30,12 +30,15 @@ def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     _verbose_print = partial(_conditional_print, condition=verbose)
 
     contiguous_rows = _split_into_contiguous(row_idx)
+    n_column_blocks = int(ceil(float(array.shape[1]) / block_size))
 
     sum_res = np.zeros(array.shape[1])
     row_count = 0
-    for i, row_block in enumerate(contiguous_rows):
-        # TODO: Implement column blocks aswell
-        sum_res += np.sum(array[min(row_block) : max(row_block)+1], axis=0)
+    for row_block in contiguous_rows:
+        for j in xrange(n_column_blocks):
+            #_verbose_print("Column block " + str(j+1) + " of " + str(n_column_blocks))
+            sum_res[j * block_size: (j + 1) * block_size] += np.sum(array[min(row_block) : max(row_block)+1,
+                                                                          j * block_size: (j + 1) * block_size], axis=0)
         row_count += len(row_block)
         print "Processed", row_count, "of", len(row_idx),"rows"
 
