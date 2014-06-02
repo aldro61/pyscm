@@ -22,20 +22,22 @@ import numpy as np
 from functools import partial
 from math import ceil
 
-from .utils import _conditional_print, _class_to_string
+from .utils import _conditional_print, _class_to_string, _split_into_contiguous
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
 
 def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     _verbose_print = partial(_conditional_print, condition=verbose)
 
-    n_blocks = int(ceil(float(array.shape[1]) / block_size))
-    _verbose_print("Computing sum of array (" + str(n_blocks) + " blocks)")
+    contiguous_rows = _split_into_contiguous(row_idx)
 
     sum_res = np.zeros(array.shape[1])
-    for i in xrange(n_blocks):
-        _verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
-        sum_res[i * block_size: (i + 1) * block_size] = np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
+    row_count = 0
+    for i, row_block in enumerate(contiguous_rows):
+        # TODO: Implement column blocks aswell
+        sum_res += np.sum(array[min(row_block) : max(row_block)+1], axis=0)
+        row_count += len(row_block)
+        print "Processed", row_count, "of", len(row_idx),"rows"
 
     return sum_res
 
