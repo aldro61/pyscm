@@ -36,11 +36,10 @@ def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     row_count = 0
     for row_block in contiguous_rows:
         for j in xrange(n_column_blocks):
-            #_verbose_print("Column block " + str(j+1) + " of " + str(n_column_blocks))
             sum_res[j * block_size: (j + 1) * block_size] += np.sum(array[min(row_block) : max(row_block)+1,
                                                                           j * block_size: (j + 1) * block_size], axis=0)
         row_count += len(row_block)
-        print "Processed", row_count, "of", len(row_idx),"rows"
+        _verbose_print("Processed " + str(row_count) + " of " + str(len(row_idx)) + " rows")
 
     return sum_res
 
