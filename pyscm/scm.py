@@ -32,7 +32,16 @@ def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     contiguous_rows = _split_into_contiguous(row_idx)
     n_column_blocks = int(ceil(float(array.shape[1]) / block_size))
 
-    sum_res = np.zeros(array.shape[1])
+    if row_idx.shape[0] <= np.iinfo(np.uint8).max:
+        dtype = np.uint8
+    elif row_idx.shape[0] <= np.iinfo(np.uint16).max:
+        dtype = np.uint16
+    elif row_idx.shape[0] <= np.iinfo(np.uint32).max:
+        dtype = np.uint32
+    else:
+        dtype = np.uint64
+
+    sum_res = np.zeros(array.shape[1], dtype = dtype)
     row_count = 0
     for row_block in contiguous_rows:
         for j in xrange(n_column_blocks):
