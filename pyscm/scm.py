@@ -22,20 +22,33 @@ import numpy as np
 from functools import partial
 from math import ceil
 
-from .utils import _conditional_print, _class_to_string
+from .utils import _conditional_print, _class_to_string, _split_into_contiguous
 from .model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
 
 def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     _verbose_print = partial(_conditional_print, condition=verbose)
 
-    n_blocks = int(ceil(float(array.shape[1]) / block_size))
-    _verbose_print("Computing sum of array (" + str(n_blocks) + " blocks)")
+    contiguous_rows = _split_into_contiguous(row_idx)
+    n_column_blocks = int(ceil(float(array.shape[1]) / block_size))
 
-    sum_res = np.zeros(array.shape[1])
-    for i in xrange(n_blocks):
-        _verbose_print("Block " + str(i+1) + " of " + str(n_blocks))
-        sum_res[i * block_size: (i + 1) * block_size] = np.sum(array[row_idx, i * block_size: (i + 1) * block_size], axis=0)
+    if row_idx.shape[0] <= np.iinfo(np.uint8).max:
+        dtype = np.uint8
+    elif row_idx.shape[0] <= np.iinfo(np.uint16).max:
+        dtype = np.uint16
+    elif row_idx.shape[0] <= np.iinfo(np.uint32).max:
+        dtype = np.uint32
+    else:
+        dtype = np.uint64
+
+    sum_res = np.zeros(array.shape[1], dtype = dtype)
+    row_count = 0
+    for row_block in contiguous_rows:
+        for j in xrange(n_column_blocks):
+            sum_res[j * block_size: (j + 1) * block_size] += np.sum(array[min(row_block) : max(row_block)+1,
+                                                                          j * block_size: (j + 1) * block_size], axis=0)
+        row_count += len(row_block)
+        _verbose_print("Processed " + str(row_count) + " of " + str(len(row_idx)) + " rows")
 
     return sum_res
 
