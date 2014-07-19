@@ -17,28 +17,43 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import numpy as np
 
-from .base import ModelMixin
+from .base import BaseModel
 
-
-class ConjunctionModel(ModelMixin):
+class ConjunctionModel(BaseModel):
     def predict(self, X):
-        predictions = np.ones(X.shape[0], np.uint8)
-        for a in self.binary_attributes:
-            predictions = np.logical_and(predictions, a.classify(X))
+        predictions = self.predict_proba(X)
+        predictions[predictions > 0.5] = 1
+        predictions[predictions <= 0.5] = 0
+
         return np.asarray(predictions, dtype=np.uint8)
+
+    def predict_proba(self, X):
+        predictions = np.ones(X.shape[0], np.float32)
+        for a in self.binary_attributes:
+            predictions *= a.classify(X)
+        return predictions
 
     def __str__(self):
         return self._to_string(separator=" and ")
 
 
-class DisjunctionModel(ModelMixin):
+class DisjunctionModel(BaseModel):
     def predict(self, X):
-        predictions = np.zeros(X.shape[0], dtype=np.uint8)
-        for a in self.binary_attributes:
-            predictions = np.logical_or(predictions, a.classify(X))
+        predictions = self.predict_proba(X)
+        pos_idx = np.where(predictions < 0.5)[0]
+        predictions[predictions >= 0.5] = 0
+        predictions[pos_idx] = 1
+
         return np.asarray(predictions, dtype=np.uint8)
+
+    def predict_proba(self, X):
+        predictions = np.ones(X.shape[0], dtype=np.float32)
+        for a in self.binary_attributes:
+            predictions *= 1.0 - a.classify(X)
+        return predictions
 
     def __str__(self):
         return self._to_string(separator=" or ")

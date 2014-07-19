@@ -18,12 +18,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class ModelMixin:
+class BaseModel(object):
     def __init__(self):
         self.binary_attributes = []
+        super(BaseModel, self).__init__()
 
     def add(self, binary_attribute):
         self.binary_attributes.append(binary_attribute)
+
+    def predict(self, X):
+        raise NotImplementedError()
+
+    def predict_proba(self, X):
+        raise NotImplementedError()
 
     def remove(self, index):
         del self.binary_attributes[index]
