@@ -22,10 +22,12 @@ import numpy as np
 from functools import partial
 
 from ..model import conjunction, disjunction
-from ..utils import _conditional_print
+from ..utils import _conditional_print, _class_to_string
 
 class BaseSetCoveringMachine(object):
     def __init__(self, model_type, max_attributes, verbose):
+        super(BaseSetCoveringMachine, self).__init__()
+
         self.verbose = verbose
         self._verbose_print = partial(_conditional_print, condition=verbose)
 
@@ -39,9 +41,10 @@ class BaseSetCoveringMachine(object):
             raise ValueError("Unsupported model type.")
 
         self.max_attributes = max_attributes
+        self._flags = {}
 
     def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
-            cover_count_block_size=1000):
+            cover_count_block_size=1000, **kwargs):
         """
         Fit a SCM model.
 
@@ -75,16 +78,21 @@ class BaseSetCoveringMachine(object):
                 of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
                 We try to prevent loading the entire dataset into memory.
         """
+        utility_function_additional_args = {}
+        if kwargs != None:
+            for key, value in kwargs.iteritems():
+                if key[:9] == "utility__":
+                    utility_function_additional_args[key[9:]] = value
+
         if X is None and attribute_classifications is None:
             raise ValueError("X or attribute_classifications must have a value.")
 
-        classes, y = np.unique(y, return_inverse=True)
-        if len(classes) < 2 or len(classes) > 2:
+        self._classes, y = np.unique(y, return_inverse=True)
+        if len(self._classes) < 2 or len(self._classes) > 2:
             raise ValueError("y must contain two unique classes.")
-        self._classes = classes
+
         self._verbose_print("Example classes are: positive (" + str(self._classes[1]) + "), negative (" + \
                             str(self._classes[0]) + ")")
-        del classes
 
         positive_example_idx, negative_example_idx = self._get_example_idx_by_class(y)
 
@@ -99,12 +107,18 @@ class BaseSetCoveringMachine(object):
                                  "binary_attributes.")
         del X, y
 
+        attributes_in_model_indices = []
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
             utilities = self._get_binary_attribute_utilities(attribute_classifications=attribute_classifications,
                                                              positive_example_idx=positive_example_idx,
                                                              negative_example_idx=negative_example_idx,
-                                                             cover_count_block_size=cover_count_block_size)
+                                                             cover_count_block_size=cover_count_block_size,
+                                                             **utility_function_additional_args)
             best_attribute_idx = np.argmax(utilities)
+
+            if best_attribute_idx in attributes_in_model_indices:
+                self._verbose_print("Stopping due to duplicate attribute selection.")
+                break
 
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
             if self.verbose:  # Save the computation if verbose is off
@@ -117,7 +131,10 @@ class BaseSetCoveringMachine(object):
                         if idx != best_attribute_idx:
                             self._verbose_print(binary_attributes[idx])
 
-            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+            # We need to check if the attribute is already in the model. If yes, then stop here.
+            appended_attribute = \
+                self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+            attributes_in_model_indices.append(best_attribute_idx)
 
             if model_append_callback is not None:
                 model_append_callback(appended_attribute)
@@ -151,7 +168,7 @@ class BaseSetCoveringMachine(object):
 
     def predict(self, X):
         """
-        Compute predictions.
+        Compute binary predictions.
 
         Parameters:
         -----------
@@ -163,9 +180,7 @@ class BaseSetCoveringMachine(object):
         predictions: numpy_array, shape=(n_examples,)
             The predicted class for each example.
         """
-        if not self._is_fitted():
-            raise RuntimeError("A model must be fitted prior to calling predict.")
-        return self._classes.take(self.model.predict(X))
+        return self._predict(X)
 
     def _append_conjunction_model(self, new_attribute):
         self.model.add(new_attribute)
@@ -194,6 +209,23 @@ class BaseSetCoveringMachine(object):
 
     def _is_fitted(self):
         return len(self.model) > 0
+
+    def _predict(self, X):
+        if not self._is_fitted():
+            raise RuntimeError("A model must be fitted prior to calling predict.")
+        return self._classes.take(self.model.predict(X))
+
+    def _predict_proba(self, X):
+        """
+        Child classes must have the PROBABILISTIC_PREDICTIONS set to True to use this method.
+        """
+        if not self._is_fitted():
+            raise RuntimeError("A model must be fitted prior to calling predict.")
+
+        if not self._flags.get("PROBABILISTIC_PREDICTIONS", False):
+            raise RuntimeError("The predictor does not support probabilistic predictions.")
+
+        return self.model.predict_proba(X)
 
     def __str__(self):
         return _class_to_string(self)
