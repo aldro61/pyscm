@@ -23,13 +23,6 @@ import numpy as np
 from .base import BaseModel
 
 class ConjunctionModel(BaseModel):
-    def predict(self, X):
-        predictions = self.predict_proba(X)
-        predictions[predictions > 0.5] = 1
-        predictions[predictions <= 0.5] = 0
-
-        return np.asarray(predictions, dtype=np.uint8)
-
     def predict_proba(self, X):
         predictions = np.ones(X.shape[0], np.float32)
         for a in self.binary_attributes:
@@ -41,19 +34,11 @@ class ConjunctionModel(BaseModel):
 
 
 class DisjunctionModel(BaseModel):
-    def predict(self, X):
-        predictions = self.predict_proba(X)
-        pos_idx = np.where(predictions < 0.5)[0]
-        predictions[predictions >= 0.5] = 0
-        predictions[pos_idx] = 1
-
-        return np.asarray(predictions, dtype=np.uint8)
-
     def predict_proba(self, X):
         predictions = np.ones(X.shape[0], dtype=np.float32)
         for a in self.binary_attributes:
-            predictions *= 1.0 - a.classify(X)
-        return predictions
+            predictions *= 1.0 - a.classify(X) # Proportion of the voters that predict False in a
+        return 1.0 - predictions
 
     def __str__(self):
         return self._to_string(separator=" or ")

@@ -17,6 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import numpy as np
 
 class BaseModel(object):
     def __init__(self):
@@ -27,7 +28,10 @@ class BaseModel(object):
         self.binary_attributes.append(binary_attribute)
 
     def predict(self, X):
-        raise NotImplementedError()
+        predictions = self.predict_proba(X)
+        predictions[predictions > 0.5] = 1
+        predictions[predictions <= 0.5] = 0
+        return np.asarray(predictions, dtype=np.uint8)
 
     def predict_proba(self, X):
         raise NotImplementedError()
@@ -41,6 +45,13 @@ class BaseModel(object):
 
     def _to_string(self, separator=" "):
         return separator.join([str(a) for a in self.binary_attributes])
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __iter__(self):
+        for ba in self.binary_attributes:
+            yield ba
 
     def __len__(self):
         return len(self.binary_attributes)
