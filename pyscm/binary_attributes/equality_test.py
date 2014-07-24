@@ -21,11 +21,11 @@
 import numpy as np
 
 from math import ceil
-from .base import BinaryAttributeMixin
-from .base import BinaryAttributeListMixin
+from .base import SingleBinaryAttribute
+from .base import BaseBinaryAttributeList
 
 
-class EqualityTest(BinaryAttributeMixin):
+class EqualityTest(SingleBinaryAttribute):
     """
     A binary attribute that checks if a feature has a given value.
 
@@ -47,10 +47,8 @@ class EqualityTest(BinaryAttributeMixin):
     def __init__(self, feature_idx, value, outcome=True, example_dependencies=[]):
         self.feature_idx = feature_idx
         self.value = value
-        #TODO: check that outcome is True or False
         self.outcome = outcome
-
-        BinaryAttributeMixin.__init__(self, example_dependencies)
+        super(EqualityTest, self).__init__(example_dependencies)
 
     def classify(self, X):
         """
@@ -70,7 +68,6 @@ class EqualityTest(BinaryAttributeMixin):
             labels = np.asarray(X[:, self.feature_idx] == self.value, dtype=np.uint8)
         else:
             labels = np.asarray(X[:, self.feature_idx] != self.value, dtype=np.uint8)
-
         return labels
 
     def inverse(self):
@@ -93,7 +90,7 @@ class EqualityTest(BinaryAttributeMixin):
         return "x[" + str(self.feature_idx) + "] " + ("==" if self.outcome == True else "!=") + " " + str(self.value)
 
 
-class EqualityTestList(BinaryAttributeListMixin):
+class EqualityTestList(BaseBinaryAttributeList):
     """
     A binary attribute list specially designed for equality tests.
 
@@ -119,35 +116,11 @@ class EqualityTestList(BinaryAttributeListMixin):
     """
 
     def __init__(self, feature_idx, values, outcomes, example_dependencies=None):
-        if example_dependencies is None:
-            if len(set(map(len, (feature_idx, values, outcomes)))) != 1:
-                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
-        else:
-            if len(set(map(len, (feature_idx, values, outcomes, example_dependencies)))) != 1:
-                raise ValueError("EqualityTestList constructor: The input lists length should be equal.")
-
-        if not all((value == True or value == False) for value in outcomes):
-            raise ValueError('The outcomes list  should\'t contain the values other than {True, False}')
-
         self.feature_idx = np.asarray(feature_idx)
         self.values = np.asarray(values)
         self.outcomes = np.asarray(outcomes, np.bool)
         self.example_dependencies = example_dependencies
-
-        BinaryAttributeListMixin.__init__(self)
-
-    def __len__(self):
-        return self.feature_idx.shape[0]
-
-    def __getitem__(self, item_idx):
-        if item_idx > len(self) - 1:
-            raise IndexError()
-
-        return EqualityTest(feature_idx=self.feature_idx[item_idx],
-                            value=self.values[item_idx],
-                            outcome=self.outcomes[item_idx],
-                            example_dependencies=[] if self.example_dependencies is None \
-                                else self.example_dependencies[item_idx])
+        super(EqualityTestList, self).__init__()
 
     def classify(self, X):
         """
@@ -172,4 +145,29 @@ class EqualityTestList(BinaryAttributeListMixin):
             np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
         return attribute_classifications
 
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for k,v in self.__dict__.iteritems():
+            comparison = other.__dict__.get(k, None) == v
+            try:
+                iter(comparison)
+                equal = all(comparison)
+            except TypeError:
+                equal = comparison
+            if not equal:
+                return False
+        return True
 
+
+    def __getitem__(self, item_idx):
+        if item_idx > len(self) - 1:
+            raise IndexError()
+        return EqualityTest(feature_idx=self.feature_idx[item_idx],
+                            value=self.values[item_idx],
+                            outcome=self.outcomes[item_idx],
+                            example_dependencies=[] if self.example_dependencies is None \
+                                else self.example_dependencies[item_idx])
+
+    def __len__(self):
+        return self.feature_idx.shape[0]

@@ -20,10 +20,10 @@
 
 import numpy as np
 
-from .base import BinaryAttributeListMixin
+from .base import BaseBinaryAttributeList
 
 
-class DefaultBinaryAttributeList(BinaryAttributeListMixin):
+class DefaultBinaryAttributeList(BaseBinaryAttributeList):
     """
     A binary attribute list that can be used with any type of binary attributes.
 
@@ -42,7 +42,7 @@ class DefaultBinaryAttributeList(BinaryAttributeListMixin):
 
     def __init__(self, binary_attributes):
         self.binary_attributes = binary_attributes
-        BinaryAttributeListMixin.__init__(self)
+        super(DefaultBinaryAttributeList, self).__init__()
 
     def __len__(self):
         return len(self.binary_attributes)

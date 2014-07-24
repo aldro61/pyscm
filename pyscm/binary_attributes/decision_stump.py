@@ -21,11 +21,11 @@
 import numpy as np
 
 from math import ceil
-from .base import BinaryAttributeMixin
-from .base import BinaryAttributeListMixin
+from .base import SingleBinaryAttribute
+from .base import BaseBinaryAttributeList
 
 
-class DecisionStump(BinaryAttributeMixin):
+class DecisionStump(SingleBinaryAttribute):
     """
     A decision stump binary attribute.
 
@@ -48,13 +48,10 @@ class DecisionStump(BinaryAttributeMixin):
     def __init__(self, feature_idx, direction, threshold, example_dependencies=[]):
         if direction != 1 and direction != -1:
             raise ValueError("Invalid decision stump direction.")
-
-        #TODO: check that direction is -1 or 1
         self.feature_idx = feature_idx
         self.direction = direction
         self.threshold = threshold
-
-        BinaryAttributeMixin.__init__(self, example_dependencies)
+        super(DecisionStump, self).__init__(example_dependencies)
 
     def classify(self, X):
         """
@@ -96,7 +93,7 @@ class DecisionStump(BinaryAttributeMixin):
         return "x[" + str(self.feature_idx) + "] " + (">" if self.direction == 1 else "<") + " " + str(self.threshold)
 
 
-class DecisionStumpList(BinaryAttributeListMixin):
+class DecisionStumpList(BaseBinaryAttributeList):
     """
     A binary attribute list specially designed for decision stumps.
 
@@ -122,22 +119,11 @@ class DecisionStumpList(BinaryAttributeListMixin):
     """
 
     def __init__(self, feature_idx, directions, thresholds, example_dependencies=None):
-        if example_dependencies is None:
-            if len(set(map(len, (feature_idx, directions, thresholds)))) != 1:
-                raise ValueError("DecisionStumpList constructor: The input lists length should be equal.")
-        else:
-            if len(set(map(len, (feature_idx, directions, thresholds, example_dependencies)))) != 1:
-                raise ValueError("DecisionStumpList constructor: The input lists length should be equal.")
-
-        if not all((value == 1 or value == -1) for value in directions):
-            raise ValueError('The directions list should\'t contain the values other than {-1, +1}')
-
         self.feature_idx = np.asarray(feature_idx)
         self.directions = np.asarray(directions, np.int8)
         self.thresholds = np.asarray(thresholds)
         self.example_dependencies = example_dependencies
-
-        BinaryAttributeListMixin.__init__(self)
+        super(DecisionStumpList, self).__init__()
 
     def __len__(self):
         return self.feature_idx.shape[0]
@@ -145,7 +131,6 @@ class DecisionStumpList(BinaryAttributeListMixin):
     def __getitem__(self, item_idx):
         if item_idx > len(self) - 1:
             raise IndexError()
-
         return DecisionStump(feature_idx=self.feature_idx[item_idx],
                              direction=self.directions[item_idx],
                              threshold=self.thresholds[item_idx],
