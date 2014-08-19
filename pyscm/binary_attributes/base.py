@@ -139,10 +139,6 @@ class SingleBinaryAttribute(BaseMetaBinaryAttribute):
 
 class SingleBinaryAttributeList(BaseBinaryAttributeList):
     def __init__(self):
-        for binary_attribute in self:
-            if not isinstance(binary_attribute, SingleBinaryAttribute):
-                raise ValueError("A list of single binary attributes can only contain single binary attributes.")
-
         super(SingleBinaryAttributeList, self).__init__()
 
 
