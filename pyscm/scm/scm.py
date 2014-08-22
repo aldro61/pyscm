@@ -93,13 +93,11 @@ class SetCoveringMachine(BaseSetCoveringMachine):
                                                                                 attribute_classifications,
                                                                                 cover_count_block_size,
                                                                                 self.verbose)
-
         self._verbose_print("Counting errors on positive examples")
         positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
                                                                                 attribute_classifications,
                                                                                 cover_count_block_size,
                                                                                 self.verbose)
-
         self._verbose_print("Computing attribute utilities")
         utilities = negative_cover_counts - self.p * positive_error_counts
         del negative_cover_counts, positive_error_counts
@@ -183,10 +181,10 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 attribute_classifications=meta_attribute_classifications,
                                                 model_append_callback=model_append_callback,
                                                 cover_count_block_size=cover_count_block_size,
-                                                utility__meta_attribute_cardinality_term=np.log(proportion_of_all_attributes))
+                                                utility__meta_attribute_cardinalities=np.log(binary_attributes.cardinalities)
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        cover_count_block_size, meta_attribute_cardinality_term):
+                                        cover_count_block_size, meta_attribute_cardinalities):
         self._verbose_print("Counting covered negative examples")
         negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
                                                                                 attribute_classifications,
@@ -198,7 +196,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                                                 cover_count_block_size,
                                                                                 self.verbose)
         self._verbose_print("Computing attribute utilities")
-        utilities = negative_cover_counts - self.p * positive_error_counts - self.c * meta_attribute_cardinality_term
+        utilities = negative_cover_counts - self.p * positive_error_counts + self.c * meta_attribute_cardinalities
 
         return utilities
 
