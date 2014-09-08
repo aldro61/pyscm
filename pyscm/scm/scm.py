@@ -94,10 +94,16 @@ class SetCoveringMachine(BaseSetCoveringMachine):
                                                                                 cover_count_block_size,
                                                                                 self.verbose)
         self._verbose_print("Counting errors on positive examples")
-        positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
-                                                                                attribute_classifications,
-                                                                                cover_count_block_size,
-                                                                                self.verbose)
+        # It is possible that there are no more positive examples to be considered. This is not possible for negative
+        # examples because of the SCM's stopping criterion.
+        if positive_example_idx.shape[0] > 0:
+            positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
+                                                                                    attribute_classifications,
+                                                                                    cover_count_block_size,
+                                                                                    self.verbose)
+        else:
+            positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
+
         self._verbose_print("Computing attribute utilities")
         utilities = negative_cover_counts - self.p * positive_error_counts
         del negative_cover_counts, positive_error_counts
@@ -190,11 +196,18 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                                                 attribute_classifications,
                                                                                 cover_count_block_size,
                                                                                 self.verbose)
+
         self._verbose_print("Counting errors on positive examples")
-        positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
-                                                                                attribute_classifications,
-                                                                                cover_count_block_size,
-                                                                                self.verbose)
+        # It is possible that there are no more positive examples to be considered. This is not possible for negative
+        # examples because of the SCM's stopping criterion.
+        if positive_example_idx.shape[0] > 0:
+            positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(positive_example_idx,
+                                                                                    attribute_classifications,
+                                                                                    cover_count_block_size,
+                                                                                    self.verbose)
+        else:
+            positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
+
         self._verbose_print("Computing attribute utilities")
         utilities = negative_cover_counts - self.p * positive_error_counts + self.c * meta_attribute_cardinalities
 

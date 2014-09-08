@@ -129,7 +129,8 @@ class BaseSetCoveringMachine(object):
                     self._verbose_print("These are:")
                     for idx in equal_utility_idx:
                         if idx != best_attribute_idx:
-                            self._verbose_print(binary_attributes[idx])
+                            #self._verbose_print(binary_attributes[idx])
+                            print idx
 
             # We need to check if the attribute is already in the model. If yes, then stop here.
             appended_attribute = \
