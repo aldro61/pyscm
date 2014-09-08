@@ -177,10 +177,6 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                 raise ValueError("The number of attributes must match in attribute_classifications and",
                                  "binary_attributes.")
 
-        proportion_of_all_attributes = float(2*(4**31)) / np.asarray(binary_attributes.cardinalities, dtype=np.float32)
-        #TODO: Make the total number of possible kmers a parameter
-        from warnings import warn; warn("CONSTANT IN CODE FOR LEN 31 KMERS. Make this a parameter!")
-
         super(MetaSetCoveringMachine, self).fit(binary_attributes=binary_attributes,
                                                 y=y,
                                                 X=X,
