@@ -187,7 +187,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 attribute_classifications=meta_attribute_classifications,
                                                 model_append_callback=model_append_callback,
                                                 cover_count_block_size=cover_count_block_size,
-                                                utility__meta_attribute_cardinalities=np.log(binary_attributes.cardinalities)
+                                                utility__meta_attribute_cardinalities=np.log(binary_attributes.cardinalities))
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
                                         cover_count_block_size, meta_attribute_cardinalities):
