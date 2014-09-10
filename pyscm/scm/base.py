@@ -159,7 +159,7 @@ class BaseSetCoveringMachine(object):
             if len(positive_example_idx) > 1:
                 positive_example_idx = positive_example_idx[
                     attribute_classifications[positive_example_idx, best_attribute_idx] != 0]
-            else:
+            elif len(positive_example_idx) > 0:
                 keep = attribute_classifications[positive_example_idx, best_attribute_idx] != 0
                 keep = keep.reshape((1,))
                 positive_example_idx = positive_example_idx[keep]
