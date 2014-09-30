@@ -17,12 +17,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import numpy as np
-
 from functools import partial
+
+import numpy as np
 
 from ..model import conjunction, disjunction
 from ..utils import _conditional_print, _class_to_string
+
+
+def _n_training_errors(n_remaining_positives, n_remaining_negatives, n_total_positives):
+    return n_remaining_negatives + (n_total_positives - n_remaining_positives)
+
 
 class BaseSetCoveringMachine(object):
     def __init__(self, model_type, max_attributes, verbose):
@@ -107,18 +112,17 @@ class BaseSetCoveringMachine(object):
                                  "binary_attributes.")
         del X, y
 
-        attributes_in_model_indices = []
+        n_positive_examples_initial = len(positive_example_idx)
+        n_trn_errors_prev_iter = len(positive_example_idx) + len(negative_example_idx)
+
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
+
             utilities = self._get_binary_attribute_utilities(attribute_classifications=attribute_classifications,
                                                              positive_example_idx=positive_example_idx,
                                                              negative_example_idx=negative_example_idx,
                                                              cover_count_block_size=cover_count_block_size,
                                                              **utility_function_additional_args)
             best_attribute_idx = np.argmax(utilities)
-
-            if best_attribute_idx in attributes_in_model_indices:
-                self._verbose_print("Stopping due to duplicate attribute selection.")
-                break
 
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
             if self.verbose:  # Save the computation if verbose is off
@@ -129,18 +133,8 @@ class BaseSetCoveringMachine(object):
                     self._verbose_print("These are:")
                     for idx in equal_utility_idx:
                         if idx != best_attribute_idx:
-                            #self._verbose_print(binary_attributes[idx])
+                            # self._verbose_print(binary_attributes[idx])
                             print idx
-
-            # We need to check if the attribute is already in the model. If yes, then stop here.
-            appended_attribute = \
-                self._add_attribute_to_model(binary_attributes[best_attribute_idx])
-            attributes_in_model_indices.append(best_attribute_idx)
-
-            if model_append_callback is not None:
-                model_append_callback(appended_attribute)
-
-            del utilities, appended_attribute
 
             self._verbose_print("Discarding covered negative examples")
             # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
@@ -163,6 +157,25 @@ class BaseSetCoveringMachine(object):
                 keep = attribute_classifications[positive_example_idx, best_attribute_idx] != 0
                 keep = keep.reshape((1,))
                 positive_example_idx = positive_example_idx[keep]
+
+            n_trn_errors = _n_training_errors(len(positive_example_idx),
+                                              len(negative_example_idx),
+                                              n_positive_examples_initial)
+
+            # If the number of training errors is not reduced by adding the best attribute, stop adding attributes.
+            if n_trn_errors < n_trn_errors_prev_iter:
+                n_trn_errors_prev_iter = n_trn_errors
+            else:
+                self._verbose_print("The attribute does not reduce the training risk. It will not be added to the" + \
+                                    " model. Stopping here.")
+                break
+
+            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+
+            if model_append_callback is not None:
+                model_append_callback(appended_attribute)
+
+            del utilities, appended_attribute
 
             self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
             self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))
