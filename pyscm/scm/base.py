@@ -166,7 +166,8 @@ class BaseSetCoveringMachine(object):
             if n_trn_errors < n_trn_errors_prev_iter:
                 n_trn_errors_prev_iter = n_trn_errors
             else:
-                self._verbose_print("The attribute does not reduce the training risk. Stopping here.")
+                self._verbose_print("The attribute does not reduce the training risk. It will not be added to the" + \
+                                    " model. Stopping here.")
                 break
 
             appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
