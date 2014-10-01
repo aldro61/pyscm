@@ -136,8 +136,12 @@ class BaseSetCoveringMachine(object):
 
             # Compute the training risk delta with respect to the previous iteration.
             # If an attribute does not reduce the training risk, we do not want to select it.
-            utilities[negative_cover_count - positive_error_count <= 0] = -np.infty
-
+            # This expression was obtained by simplifying the difference between the number of training errors
+            # of the previous iteration and the current iteration. For an attribute to be selectable, it must
+            # have a difference greater than 0. If this difference is less or equal to 0, we want to discard
+            # the attribute.
+            utilities[negative_cover_count <= positive_error_count] = -np.infty
+           
             best_attribute_idx = np.argmax(utilities)
 
             # If the best attribute does not reduce the training risk, stop.
