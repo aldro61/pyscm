@@ -25,6 +25,14 @@ from ..model import conjunction, disjunction
 from ..utils import _conditional_print, _class_to_string
 
 
+# n_remaining_negatives = len(negative_example_idx) - negative_cover_counts
+# del negative_cover_counts
+#
+# n_remaining_positives = len(positive_example_idx) - positive_error_counts
+# del positive_error_counts
+#
+# n_train_errors = _n_training_errors(n_remaining_positives, n_remaining_negatives, n_positive_examples_in_dataset)
+
 def _n_training_errors(n_remaining_positives, n_remaining_negatives, n_total_positives):
     return n_remaining_negatives + (n_total_positives - n_remaining_positives)
 
@@ -117,12 +125,30 @@ class BaseSetCoveringMachine(object):
 
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
 
-            utilities = self._get_binary_attribute_utilities(attribute_classifications=attribute_classifications,
-                                                             positive_example_idx=positive_example_idx,
-                                                             negative_example_idx=negative_example_idx,
-                                                             cover_count_block_size=cover_count_block_size,
-                                                             **utility_function_additional_args)
+            utilities, \
+            positive_error_count, \
+            negative_cover_count = self._get_binary_attribute_utilities(
+                attribute_classifications=attribute_classifications,
+                positive_example_idx=positive_example_idx,
+                negative_example_idx=negative_example_idx,
+                cover_count_block_size=cover_count_block_size,
+                **utility_function_additional_args)
+
+            # Compute the training risk delta with respect to the previous iteration.
+            # If an attribute does not reduce the training risk, we do not want to select it.
+            # This expression was obtained by simplifying the difference between the number of training errors
+            # of the previous iteration and the current iteration. For an attribute to be selectable, it must
+            # have a difference greater than 0. If this difference is less or equal to 0, we want to discard
+            # the attribute.
+            utilities[negative_cover_count <= positive_error_count] = -np.infty
+           
             best_attribute_idx = np.argmax(utilities)
+
+            # If the best attribute does not reduce the training risk, stop.
+            if utilities[best_attribute_idx] == -np.infty:
+                self._verbose_print("The best attribute does not reduce the training risk. It will not be added to "
+                                    "the model. Stopping here.")
+                break
 
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
             if self.verbose:  # Save the computation if verbose is off
@@ -135,6 +161,15 @@ class BaseSetCoveringMachine(object):
                         if idx != best_attribute_idx:
                             # self._verbose_print(binary_attributes[idx])
                             print idx
+
+            del utilities
+
+            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+
+            if model_append_callback is not None:
+                model_append_callback(appended_attribute)
+
+            del appended_attribute
 
             self._verbose_print("Discarding covered negative examples")
             # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
@@ -157,25 +192,6 @@ class BaseSetCoveringMachine(object):
                 keep = attribute_classifications[positive_example_idx, best_attribute_idx] != 0
                 keep = keep.reshape((1,))
                 positive_example_idx = positive_example_idx[keep]
-
-            n_trn_errors = _n_training_errors(len(positive_example_idx),
-                                              len(negative_example_idx),
-                                              n_positive_examples_initial)
-
-            # If the number of training errors is not reduced by adding the best attribute, stop adding attributes.
-            if n_trn_errors < n_trn_errors_prev_iter:
-                n_trn_errors_prev_iter = n_trn_errors
-            else:
-                self._verbose_print("The attribute does not reduce the training risk. It will not be added to the" + \
-                                    " model. Stopping here.")
-                break
-
-            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
-
-            if model_append_callback is not None:
-                model_append_callback(appended_attribute)
-
-            del utilities, appended_attribute
 
             self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
             self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))

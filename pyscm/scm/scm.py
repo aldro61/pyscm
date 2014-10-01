@@ -17,23 +17,25 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from functools import partial
+
 import numpy as np
 
-from functools import partial
 from math import ceil
-
 from .base import BaseSetCoveringMachine
 from ..model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 from ..binary_attributes.base import SingleBinaryAttributeList, MetaBinaryAttributeList
 from ..utils import _conditional_print, _split_into_contiguous
 
+
 def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     _verbose_print = partial(_conditional_print, condition=verbose)
 
     contiguous_rows = _split_into_contiguous(row_idx)
-    n_column_blocks = int(ceil(float(array.shape[1])/block_size))
+    n_column_blocks = int(ceil(float(array.shape[1]) / block_size))
 
-    if row_idx.shape[0] <= np.iinfo(np.uint8).max: #TODO: Document this (the sum is at most 1, so we attempt to save mem)
+    if row_idx.shape[0] <= np.iinfo(
+            np.uint8).max:  # TODO: Document this (the sum is at most 1, so we attempt to save mem)
         dtype = np.uint8
     elif row_idx.shape[0] <= np.iinfo(np.uint16).max:
         dtype = np.uint16
@@ -42,12 +44,12 @@ def _block_sum_rows(row_idx, array, block_size=1000, verbose=False):
     else:
         dtype = np.uint64
 
-    sum_res = np.zeros(array.shape[1], dtype = dtype)
+    sum_res = np.zeros(array.shape[1], dtype=dtype)
     row_count = 0
     for row_block in contiguous_rows:
         for j in xrange(n_column_blocks):
-            sum_res[j * block_size: (j + 1) * block_size] += np.sum(array[min(row_block) : max(row_block)+1,
-                                                                          j * block_size: (j + 1) * block_size], axis=0)
+            sum_res[j * block_size: (j + 1) * block_size] += np.sum(array[min(row_block): max(row_block) + 1,
+                                                                    j * block_size: (j + 1) * block_size], axis=0)
         row_count += len(row_block)
         _verbose_print("Processed " + str(row_count) + " of " + str(len(row_idx)) + " rows")
 
@@ -74,6 +76,7 @@ class SetCoveringMachine(BaseSetCoveringMachine):
     verbose: bool, default=False
         Sets verbose mode on/off.
     """
+
     def __init__(self, model_type=conjunction, p=1.0, max_attributes=10, verbose=False):
         super(SetCoveringMachine, self).__init__(model_type=model_type, max_attributes=max_attributes, verbose=verbose)
 
@@ -106,10 +109,8 @@ class SetCoveringMachine(BaseSetCoveringMachine):
 
         self._verbose_print("Computing attribute utilities")
         utilities = negative_cover_counts - self.p * positive_error_counts
-        del negative_cover_counts, positive_error_counts
 
-        return utilities
-
+        return utilities, positive_error_counts, negative_cover_counts
 
 
 class MetaSetCoveringMachine(BaseSetCoveringMachine):
@@ -135,8 +136,10 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
     verbose: bool, default=False
         Sets verbose mode on/off.
     """
+
     def __init__(self, model_type=conjunction, p=1.0, c=1.0, max_attributes=10, verbose=False):
-        super(MetaSetCoveringMachine, self).__init__(model_type=model_type, max_attributes=max_attributes, verbose=verbose)
+        super(MetaSetCoveringMachine, self).__init__(model_type=model_type, max_attributes=max_attributes,
+                                                     verbose=verbose)
 
         if model_type == conjunction:
             self.model = ConjunctionModel()
@@ -183,7 +186,8 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 attribute_classifications=meta_attribute_classifications,
                                                 model_append_callback=model_append_callback,
                                                 cover_count_block_size=cover_count_block_size,
-                                                utility__meta_attribute_cardinalities=np.log(binary_attributes.cardinalities))
+                                                utility__meta_attribute_cardinalities=np.log(
+                                                    binary_attributes.cardinalities))
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
                                         cover_count_block_size, meta_attribute_cardinalities):
@@ -207,7 +211,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
         self._verbose_print("Computing attribute utilities")
         utilities = negative_cover_counts - self.p * positive_error_counts + self.c * meta_attribute_cardinalities
 
-        return utilities
+        return utilities, positive_error_counts, negative_cover_counts
 
     def predict_proba(self, X):
         """
