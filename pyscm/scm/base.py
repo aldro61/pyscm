@@ -25,18 +25,6 @@ from ..model import conjunction, disjunction
 from ..utils import _conditional_print, _class_to_string
 
 
-# n_remaining_negatives = len(negative_example_idx) - negative_cover_counts
-# del negative_cover_counts
-#
-# n_remaining_positives = len(positive_example_idx) - positive_error_counts
-# del positive_error_counts
-#
-# n_train_errors = _n_training_errors(n_remaining_positives, n_remaining_negatives, n_positive_examples_in_dataset)
-
-def _n_training_errors(n_remaining_positives, n_remaining_negatives, n_total_positives):
-    return n_remaining_negatives + (n_total_positives - n_remaining_positives)
-
-
 class BaseSetCoveringMachine(object):
     def __init__(self, model_type, max_attributes, verbose):
         super(BaseSetCoveringMachine, self).__init__()
