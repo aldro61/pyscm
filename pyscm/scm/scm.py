@@ -108,7 +108,7 @@ class SetCoveringMachine(BaseSetCoveringMachine):
             positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
 
         self._verbose_print("Computing attribute utilities")
-        utilities = negative_cover_counts - self.p * positive_error_counts
+        utilities = negative_cover_counts - float(self.p) * positive_error_counts
 
         return utilities, positive_error_counts, negative_cover_counts
 
@@ -209,7 +209,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
             positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
 
         self._verbose_print("Computing attribute utilities")
-        utilities = negative_cover_counts - self.p * positive_error_counts + self.c * meta_attribute_cardinalities
+        utilities = negative_cover_counts - float(self.p) * positive_error_counts + float(self.c) * meta_attribute_cardinalities
 
         return utilities, positive_error_counts, negative_cover_counts
 
