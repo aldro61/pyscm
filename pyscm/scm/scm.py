@@ -137,7 +137,8 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
         Sets verbose mode on/off.
     """
 
-    def __init__(self, model_type=conjunction, p=1.0, c=1.0, max_attributes=10, verbose=False):
+    def __init__(self, model_type=conjunction, p=1.0, c=1.0, max_meta_attribute_cardinality=np.infty, max_attributes=10,
+                 verbose=False):
         super(MetaSetCoveringMachine, self).__init__(model_type=model_type, max_attributes=max_attributes,
                                                      verbose=verbose)
 
@@ -150,6 +151,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
 
         self.p = p
         self.c = c
+        self.max_meta_attribute_cardinality = max_meta_attribute_cardinality
 
         self._flags["PROBABILISTIC_PREDICTIONS"] = True
 
@@ -187,10 +189,12 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 model_append_callback=model_append_callback,
                                                 cover_count_block_size=cover_count_block_size,
                                                 utility__meta_attribute_cardinalities=np.log(
-                                                    binary_attributes.cardinalities))
+                                                    binary_attributes.cardinalities),
+                                                utility__max_meta_attribute_cardinality=self.max_meta_attribute_cardinality)
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        cover_count_block_size, meta_attribute_cardinalities):
+                                        cover_count_block_size, meta_attribute_cardinalities,
+                                        max_meta_attribute_cardinality):
         self._verbose_print("Counting covered negative examples")
         negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(negative_example_idx,
                                                                                 attribute_classifications,
@@ -209,7 +213,11 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
             positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
 
         self._verbose_print("Computing attribute utilities")
-        utilities = negative_cover_counts - float(self.p) * positive_error_counts + float(self.c) * meta_attribute_cardinalities
+        utilities = negative_cover_counts - float(self.p) * positive_error_counts + float(self.c) * \
+                                                                                    meta_attribute_cardinalities
+
+        # If the meta-attribute's cardinality is greater than the limit, set its utility so that it cannot be selected.
+        utilities[meta_attribute_cardinalities > max_meta_attribute_cardinality] = -np.infty
 
         return utilities, positive_error_counts, negative_cover_counts
 
