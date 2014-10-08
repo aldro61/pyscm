@@ -190,7 +190,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 cover_count_block_size=cover_count_block_size,
                                                 utility__meta_attribute_cardinalities=np.log(
                                                     binary_attributes.cardinalities),
-                                                utility__max_meta_attribute_cardinality=self.max_meta_attribute_cardinality)
+                                                utility__max_meta_attribute_cardinality=np.log(self.max_meta_attribute_cardinality))
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
                                         cover_count_block_size, meta_attribute_cardinalities,
