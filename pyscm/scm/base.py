@@ -122,33 +122,36 @@ class BaseSetCoveringMachine(object):
                 cover_count_block_size=cover_count_block_size,
                 **utility_function_additional_args)
 
-            # Compute the training risk delta with respect to the previous iteration.
+            # Compute the training risk decrease with respect to the previous iteration.
             # If an attribute does not reduce the training risk, we do not want to select it.
             # This expression was obtained by simplifying the difference between the number of training errors
             # of the previous iteration and the current iteration. For an attribute to be selectable, it must
             # have a difference greater than 0. If this difference is less or equal to 0, we want to discard
             # the attribute.
-            utilities[negative_cover_count <= positive_error_count] = -np.infty
+            training_risk_decrease = negative_cover_count - positive_error_count
+            utilities[training_risk_decrease <= 0] = -np.infty
            
-            best_attribute_idx = np.argmax(utilities)
+            best_utility = np.max(utilities)
 
             # If the best attribute does not reduce the training risk, stop.
-            if utilities[best_attribute_idx] == -np.infty:
+            if best_utility == -np.infty:
                 self._verbose_print("The best attribute does not reduce the training risk. It will not be added to "
                                     "the model. Stopping here.")
                 break
 
-            self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
-            if self.verbose:  # Save the computation if verbose is off
-                equal_utility_idx = np.where(utilities == utilities[best_attribute_idx])[0]
-                self._verbose_print("There are " + str(len(equal_utility_idx) - 1) + \
-                                    " attributes with the same utility.")
-                if len(equal_utility_idx) > 1:
-                    self._verbose_print("These are:")
-                    for idx in equal_utility_idx:
-                        if idx != best_attribute_idx:
-                            # self._verbose_print(binary_attributes[idx])
-                            print idx
+            # Find all the indexes of all attributs with the best utility
+            best_utility_idx = np.where(utilities == best_utility)[0]
+
+            # Select the attribute which most decreases the training risk out of all the attributes of best utility
+            best_training_risk_decrease = np.argmax(training_risk_decrease[best_utility_idx])
+            best_attribute_idx = best_utility_idx[best_training_risk_decrease]
+            del best_utility_idx, training_risk_decrease
+
+            self._verbose_print("Greatest utility is " + str(best_utility))
+            # Save the computation if verbose is off
+            if self.verbose:
+                self._verbose_print("There are " + str(len(np.where(utilities == utilities[best_attribute_idx])[0]) -
+                                                       1) + " attributes with the same utility.")
 
             del utilities
 
