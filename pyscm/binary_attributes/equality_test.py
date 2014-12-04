@@ -23,6 +23,7 @@ import numpy as np
 from math import ceil
 from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
+from ..utils import _pack_binary_bytes_to_ints
 
 
 class EqualityTest(SingleBinaryAttribute):
@@ -143,7 +144,7 @@ class EqualityTestList(BaseBinaryAttributeList):
                 X[:, self.feature_idx[i*block_size:(i+1)*block_size]] == self.values[i*block_size:(i+1)*block_size],
                 self.outcomes[i*block_size:(i+1)*block_size])
             np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
-        return attribute_classifications
+        return _pack_binary_bytes_to_ints(attribute_classifications, int_size=64)
 
     def __eq__(self, other):
         if len(self) != len(other):

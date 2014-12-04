@@ -23,6 +23,7 @@ import numpy as np
 from math import ceil
 from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
+from ..utils import _pack_binary_bytes_to_ints
 
 
 class DecisionStump(SingleBinaryAttribute):
@@ -125,18 +126,6 @@ class DecisionStumpList(BaseBinaryAttributeList):
         self.example_dependencies = example_dependencies
         super(DecisionStumpList, self).__init__()
 
-    def __len__(self):
-        return self.feature_idx.shape[0]
-
-    def __getitem__(self, item_idx):
-        if item_idx > len(self) - 1:
-            raise IndexError()
-        return DecisionStump(feature_idx=self.feature_idx[item_idx],
-                             direction=self.directions[item_idx],
-                             threshold=self.thresholds[item_idx],
-                             example_dependencies=[] if self.example_dependencies is None \
-                                 else self.example_dependencies[item_idx])
-
     def classify(self, X):
         """
         Classifies a set of examples using the decision stumps in the list.
@@ -157,4 +146,16 @@ class DecisionStumpList(BaseBinaryAttributeList):
             tmp = (X[:, self.feature_idx[i*block_size:(i+1)*block_size]] - self.thresholds[i*block_size:(i+1)*block_size]) * self.directions[i*block_size:(i+1)*block_size]
             attribute_classifications[:, i*block_size:(i+1)*block_size][tmp > 0] = 1
             attribute_classifications[:, i*block_size:(i+1)*block_size][tmp <= 0] = 0
-        return attribute_classifications
+        return _pack_binary_bytes_to_ints(attribute_classifications, int_size=64)
+
+    def __len__(self):
+        return self.feature_idx.shape[0]
+
+    def __getitem__(self, item_idx):
+        if item_idx > len(self) - 1:
+            raise IndexError()
+        return DecisionStump(feature_idx=self.feature_idx[item_idx],
+                             direction=self.directions[item_idx],
+                             threshold=self.thresholds[item_idx],
+                             example_dependencies=[] if self.example_dependencies is None \
+                                 else self.example_dependencies[item_idx])
