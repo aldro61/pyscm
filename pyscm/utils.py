@@ -17,7 +17,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from numpy import sort
+import numpy as np
+from math import ceil
 
 def _chunks(l, n):
     """
@@ -87,7 +88,7 @@ def _split_into_contiguous(a_list):
     contiguous_blocks: list of lists
         A list containing contiguous sublists of a_list
     """
-    a_list = sort(a_list, kind="heapsort")
+    a_list = np.sort(a_list, kind="heapsort")
 
     split = []
     contiguous = []
@@ -103,3 +104,60 @@ def _split_into_contiguous(a_list):
     split.append(contiguous)
 
     return split
+
+def _pack_binary_bytes_to_ints(a, int_size):
+    """
+    Packs binary values stored in bytes into ints
+    """
+    pack_size = int_size
+    if pack_size == 64:
+        type = np.uint64
+    elif pack_size == 32:
+        type = np.uint32
+    else:
+        raise ValueError("Supported data types are 32-bit and 64-bit integers.")
+
+    b = np.zeros((int(ceil(1.0 * a.shape[0] / pack_size)), a.shape[1]), dtype=type)
+
+    packed_rows = 0
+    packing_row = 0
+    for i in xrange(a.shape[0]):
+        if packed_rows == pack_size:
+            packed_rows = 0
+            packing_row += 1
+        tmp = np.asarray(a[i], dtype=type)
+        tmp = np.left_shift(tmp, type(pack_size - packed_rows - 1))
+        np.bitwise_or(b[packing_row], tmp, out=b[packing_row])
+        packed_rows += 1
+
+    return b
+
+def _unpack_binary_bytes_from_ints(a):
+    """
+    Unpacks binary values stored in bytes into ints
+    """
+    type = a.dtype
+
+    if type == np.uint32:
+        pack_size = 32
+    elif type == np.uint64:
+        pack_size = 64
+    else:
+        raise ValueError("Supported data types are 32-bit and 64-bit integers.")
+
+    unpacked_n_rows = a.shape[0] * pack_size
+    unpacked_n_columns = a.shape[1] if len(a.shape) > 1 else 1
+    b = np.zeros((unpacked_n_rows, a.shape[1]) if len(a.shape) > 1 else unpacked_n_rows, dtype=np.uint8)
+
+    packed_rows = 0
+    packing_row = 0
+    for i in xrange(b.shape[0]):
+        if packed_rows == pack_size:
+            packed_rows = 0
+            packing_row += 1
+        tmp = np.left_shift(np.ones(unpacked_n_columns, dtype=type), pack_size - (i - pack_size * packing_row)-1)
+        np.bitwise_and(a[packing_row], tmp, tmp)
+        b[i] = tmp > 0
+        packed_rows += 1
+
+    return b
