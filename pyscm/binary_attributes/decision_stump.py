@@ -21,6 +21,8 @@
 import numpy as np
 
 from math import ceil
+from scipy.sparse import issparse
+
 from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
 from ..utils import _pack_binary_bytes_to_ints
@@ -69,10 +71,14 @@ class DecisionStump(SingleBinaryAttribute):
             Labels assigned to each example by the decision stump.
         """
         if self.direction == 1:
-            labels = np.asarray(X[:, self.feature_idx] > self.threshold, dtype=np.uint8)
+            result = X[:, self.feature_idx] > self.threshold
         else:
-            labels = np.asarray(X[:, self.feature_idx] < self.threshold, dtype=np.uint8)
-        return labels
+            result = X[:, self.feature_idx] < self.threshold
+
+        if issparse(result):
+            result = result.toarray().reshape(result.shape[0],)
+
+        return np.asarray(result, dtype=np.uint8)
 
     def inverse(self):
         """
