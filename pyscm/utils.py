@@ -51,7 +51,7 @@ def _class_to_string(instance):
 
     Notes:
     -----
-    Public attributes must be marked with a leading underscore.
+    Private attributes must be marked with a leading underscore.
     """
     return instance.__class__.__name__ + "(" + ",".join(
         [str(k) + "=" + str(v) for k, v in instance.__dict__.iteritems() if str(k[0]) != "_"]) + ")"
