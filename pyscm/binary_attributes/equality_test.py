@@ -21,8 +21,11 @@
 import numpy as np
 
 from math import ceil
+from scipy.sparse import issparse
+
 from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
+from ..utils import _pack_binary_bytes_to_ints
 
 
 class EqualityTest(SingleBinaryAttribute):
@@ -65,10 +68,14 @@ class EqualityTest(SingleBinaryAttribute):
             Labels assigned to each example by the test.
         """
         if self.outcome:
-            labels = np.asarray(X[:, self.feature_idx] == self.value, dtype=np.uint8)
+            result = X[:, self.feature_idx] == self.value
         else:
-            labels = np.asarray(X[:, self.feature_idx] != self.value, dtype=np.uint8)
-        return labels
+            result = X[:, self.feature_idx] != self.value
+
+        if issparse(result):
+            result = result.toarray().reshape(result.shape[0],)
+
+        return np.asarray(result, dtype=np.uint8)
 
     def inverse(self):
         """
@@ -143,7 +150,7 @@ class EqualityTestList(BaseBinaryAttributeList):
                 X[:, self.feature_idx[i*block_size:(i+1)*block_size]] == self.values[i*block_size:(i+1)*block_size],
                 self.outcomes[i*block_size:(i+1)*block_size])
             np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
-        return attribute_classifications
+        return _pack_binary_bytes_to_ints(attribute_classifications, int_size=64)
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -158,7 +165,6 @@ class EqualityTestList(BaseBinaryAttributeList):
             if not equal:
                 return False
         return True
-
 
     def __getitem__(self, item_idx):
         if item_idx > len(self) - 1:
