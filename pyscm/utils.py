@@ -35,7 +35,6 @@ def _chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-
 def _class_to_string(instance):
     """
     Returns a string representation of the public attributes of a class.
@@ -52,11 +51,10 @@ def _class_to_string(instance):
 
     Notes:
     -----
-    Public attributes must be marked with a leading underscore.
+    Private attributes must be marked with a leading underscore.
     """
     return instance.__class__.__name__ + "(" + ",".join(
         [str(k) + "=" + str(v) for k, v in instance.__dict__.iteritems() if str(k[0]) != "_"]) + ")"
-
 
 def _conditional_print(text, condition):
     """
@@ -72,7 +70,6 @@ def _conditional_print(text, condition):
     """
     if condition:
         print text
-
 
 def _split_into_contiguous(a_list):
     """
