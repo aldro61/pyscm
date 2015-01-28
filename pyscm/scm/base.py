@@ -44,8 +44,7 @@ class BaseSetCoveringMachine(object):
         self.max_attributes = max_attributes
         self._flags = {}
 
-    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
-            example_block_size=64, attribute_block_size=1000, **kwargs):
+    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None, **kwargs):
         """
         Fit a SCM model.
 
@@ -69,12 +68,6 @@ class BaseSetCoveringMachine(object):
 
         model_append_callback: function, arguments: {new_attribute: BinaryAttribute, default=None}
             A function which is called when a new binary attribute is appended to the model.
-
-        example_block_size: int, default=64
-            The maximum number of example for which covers are counted at one time. Use this to limit memory usage.
-
-        attribute_block_size: int, default=1000
-            The maximum number of attributes for which covers are counted at one time. Use this to limit memory usage.
 
         Notes:
         ------
@@ -109,9 +102,9 @@ class BaseSetCoveringMachine(object):
             if attribute_classifications.shape[1] != len(binary_attributes):
                 raise ValueError("The number of attributes must match in attribute_classifications and",
                                  "binary_attributes.")
-
-        n_examples = len(y)
-
+            if attribute_classifications.shape[0] != len(y):
+                raise ValueError("The number of lines in attribute_classifications must match the number of training" +
+                                 "examples.")
         del X, y
 
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
@@ -122,9 +115,6 @@ class BaseSetCoveringMachine(object):
                 attribute_classifications=attribute_classifications,
                 positive_example_idx=positive_example_idx,
                 negative_example_idx=negative_example_idx,
-                n_examples=n_examples,
-                example_block_size=example_block_size,
-                attribute_block_size=attribute_block_size,
                 **utility_function_additional_args)
 
             # Compute the training risk decrease with respect to the previous iteration.
@@ -166,8 +156,7 @@ class BaseSetCoveringMachine(object):
             del appended_attribute
 
             # Get the best attribute's classification for each example
-            best_attribute_classifications = \
-                _unpack_binary_bytes_from_ints(attribute_classifications[:, best_attribute_idx])[:n_examples]
+            best_attribute_classifications = attribute_classifications.get_column(best_attribute_idx)
 
             self._verbose_print("Discarding covered negative examples")
             # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
@@ -220,10 +209,6 @@ class BaseSetCoveringMachine(object):
         self.model.add(new_attribute)
         self._verbose_print("Attribute added to the model: " + str(new_attribute))
         return new_attribute
-
-    def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        n_examples, example_block_size, attribute_block_size):
-        raise NotImplementedError()
 
     def _get_example_idx_by_class_conjunction(self, y):
         positive_example_idx = np.where(y == 1)[0]

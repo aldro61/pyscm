@@ -26,84 +26,6 @@ from .base import BaseSetCoveringMachine
 from ..model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 from ..binary_attributes.base import SingleBinaryAttributeList, MetaBinaryAttributeList
 from ..utils import _conditional_print, _split_into_contiguous
-from .popcount import inplace_popcount_32, inplace_popcount_64
-
-
-def _column_sum_dtype(array):
-    if array.shape[0] <= np.iinfo(np.uint8).max:
-        dtype = np.uint8
-    elif array.shape[0] <= np.iinfo(np.uint16).max:
-        dtype = np.uint16
-    elif array.shape[0] <= np.iinfo(np.uint32).max:
-        dtype = np.uint32
-    else:
-        dtype = np.uint64
-
-    return dtype
-
-
-def _block_sum_rows(row_idx, array, n_examples, row_block_size=1, column_block_size=1000, verbose=False):
-    _verbose_print = partial(_conditional_print, condition=verbose)
-    # Builds a mask to turn off the bits of the rows we do not want to count in the sum.
-    def build_row_mask(example_idx, n_examples, mask_n_bits):
-        if mask_n_bits not in [8, 16, 32, 64, 128]:
-            raise ValueError("Unsupported mask format. Use 8, 16, 32, 64 or 128 bits.")
-
-        n_masks = int(ceil(float(n_examples) / mask_n_bits))
-        masks = [0] * n_masks
-
-        for idx in example_idx:
-            example_mask = idx / mask_n_bits
-            example_mask_idx = mask_n_bits - (idx - mask_n_bits * example_mask) - 1
-            masks[example_mask] |= 1 << example_mask_idx
-
-        return np.array(masks, dtype="u" + str(mask_n_bits / 8))
-
-    # Get the size of the ints used to store the data
-    if array.dtype == np.uint32:
-        n_bits = 32
-        inplace_popcount = inplace_popcount_32
-    elif array.dtype == np.uint64:
-        n_bits = 64
-        inplace_popcount = inplace_popcount_64
-    else:
-        raise ValueError("Unsupported data type for compressed attribute classifications array. The supported data" +
-                         " types are np.uint32 and np.uint64.")
-
-    mask = build_row_mask(row_idx, n_examples, n_bits)
-    rows_to_load = np.where(mask != 0)[0]  # Don't load ints if we don't need their bits.
-    sum_res = np.zeros(array.shape[1], dtype=_column_sum_dtype(row_idx))
-
-    n_row_blocks = int(ceil(float(len(rows_to_load)) / row_block_size))
-    n_col_blocks = int(ceil(float(array.shape[1]) / column_block_size))
-
-    row_count = 0
-    for row_block in xrange(n_row_blocks):
-        row_block_start_idx = row_block * row_block_size
-        row_block_stop_idx = row_block_start_idx + row_block_size
-        row_mask = mask[rows_to_load[row_block_start_idx: row_block_stop_idx]]
-
-        for col_block in xrange(n_col_blocks):
-            col_block_start_idx = col_block * column_block_size
-            col_block_stop_idx = col_block_start_idx + column_block_size
-            block = array[rows_to_load[row_block_start_idx: row_block_stop_idx],
-                    col_block_start_idx: col_block_stop_idx]
-
-            if len(block.shape) == 1:
-                block = block.reshape(1, -1)
-
-            if hasattr(block, "flags") and not block.flags["OWNDATA"]:
-                block = block.copy()
-
-            inplace_popcount(block, row_mask)
-            sum_res[col_block_start_idx: col_block_stop_idx] += np.sum(block, axis=0)
-
-        row_count += row_block_size
-        _verbose_print(
-            "Processed " + str(min(len(rows_to_load), row_count)) + " of " + str(len(rows_to_load)) + " rows.")
-
-    return sum_res
-
 
 class SetCoveringMachine(BaseSetCoveringMachine):
     """
@@ -138,25 +60,15 @@ class SetCoveringMachine(BaseSetCoveringMachine):
 
         self.p = p
 
-    def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        n_examples, example_block_size, attribute_block_size):
+    def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx):
         self._verbose_print("Counting covered negative examples")
-        negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(row_idx=negative_example_idx,
-                                                                                array=attribute_classifications,
-                                                                                n_examples=n_examples,
-                                                                                row_block_size=example_block_size,
-                                                                                column_block_size=attribute_block_size,
-                                                                                verbose=self.verbose)
+        negative_cover_counts = negative_example_idx.shape[0] - attribute_classifications.sum_rows(negative_example_idx)
+
         self._verbose_print("Counting errors on positive examples")
         # It is possible that there are no more positive examples to be considered. This is not possible for negative
         # examples because of the SCM's stopping criterion.
         if positive_example_idx.shape[0] > 0:
-            positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(row_idx=positive_example_idx,
-                                                                                    array=attribute_classifications,
-                                                                                    n_examples=n_examples,
-                                                                                    row_block_size=example_block_size,
-                                                                                    column_block_size=attribute_block_size,
-                                                                                    verbose=self.verbose)
+            positive_error_counts = positive_example_idx.shape[0] - attribute_classifications.sum_rows(positive_example_idx)
         else:
             positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
 
@@ -206,8 +118,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
 
         self._flags["PROBABILISTIC_PREDICTIONS"] = True
 
-    def fit(self, binary_attributes, y, X=None, meta_attribute_classifications=None, model_append_callback=None,
-            example_block_size=64, attribute_block_size=1000):
+    def fit(self, binary_attributes, y, X=None, meta_attribute_classifications=None, model_append_callback=None):
         """
         """
         if X is None and meta_attribute_classifications is None:
@@ -238,32 +149,19 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 X=X,
                                                 attribute_classifications=meta_attribute_classifications,
                                                 model_append_callback=model_append_callback,
-                                                example_block_size=example_block_size,
-                                                attribute_block_size=attribute_block_size,
                                                 utility__meta_attribute_cardinalities=np.log(
                                                     binary_attributes.cardinalities))
 
     def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        n_examples, example_block_size, attribute_block_size,
                                         meta_attribute_cardinalities):
         self._verbose_print("Counting covered negative examples")
-        negative_cover_counts = negative_example_idx.shape[0] - _block_sum_rows(row_idx=negative_example_idx,
-                                                                                array=attribute_classifications,
-                                                                                n_examples=n_examples,
-                                                                                row_block_size=example_block_size,
-                                                                                column_block_size=attribute_block_size,
-                                                                                verbose=self.verbose)
+        negative_cover_counts = negative_example_idx.shape[0] - attribute_classifications.sum_rows(negative_example_idx)
 
         self._verbose_print("Counting errors on positive examples")
         # It is possible that there are no more positive examples to be considered. This is not possible for negative
         # examples because of the SCM's stopping criterion.
         if positive_example_idx.shape[0] > 0:
-            positive_error_counts = positive_example_idx.shape[0] - _block_sum_rows(row_idx=positive_example_idx,
-                                                                                    array=attribute_classifications,
-                                                                                    n_example=n_examples,
-                                                                                    row_block_size=example_block_size,
-                                                                                    column_block_size=attribute_block_size,
-                                                                                    verbose=self.verbose)
+            positive_error_counts = positive_example_idx.shape[0] - attribute_classifications.sum_rows(positive_example_idx)
         else:
             positive_error_counts = np.zeros(attribute_classifications.shape[1], dtype=negative_cover_counts.dtype)
 
