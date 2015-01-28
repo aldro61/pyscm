@@ -20,5 +20,5 @@ setup(
     url = "http://github.com/aldro61/pyscm",
 
     # Cython Extension
-    ext_modules = [Extension("pyscm/scm/popcount", ["pyscm/scm/popcount.c"], include_dirs=[get_numpy_include()], extra_compile_args=["-march=native"])]
+    ext_modules = [Extension("pyscm/binary_attributes/classifications/popcount", ["pyscm/binary_attributes/classifications/popcount.c"], include_dirs=[get_numpy_include()], extra_compile_args=["-march=native"])]
 )
