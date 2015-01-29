@@ -22,7 +22,10 @@ class BaseAttributeClassifications(object):
     def __init__(self):
         pass
 
-    def get_column(self, idx):
+    def get_column(self, column):
+        raise NotImplementedError()
+
+    def remove_rows(self, rows):
         raise NotImplementedError()
 
     @property

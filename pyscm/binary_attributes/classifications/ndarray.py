@@ -54,9 +54,9 @@ def build_row_mask(example_idx, n_examples, mask_n_bits):
         return np.array(masks, dtype="u" + str(mask_n_bits / 8))
 
 class NumpyPackedAttributeClassifications(BaseAttributeClassifications):
-    def __init__(self, array, n_examples):
+    def __init__(self, array, n_rows):
         self.array = array
-        self.n_examples = n_examples
+        self.n_examples = n_rows
 
         #TODO: The numpy array is already in RAM. Create a cython function that sums without replacing the values in the
         # received array. By doing so, we will be able to remove the block size parameters and process the entire array
@@ -65,7 +65,7 @@ class NumpyPackedAttributeClassifications(BaseAttributeClassifications):
         self.col_block_size = 1000
         super(BaseAttributeClassifications, self).__init__()
 
-    def get_column(self, idx):
+    def get_column(self, column):
         return _unpack_binary_bytes_from_ints(self.array[:, idx])[: self.n_examples]
 
     @property
