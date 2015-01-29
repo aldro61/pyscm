@@ -161,7 +161,7 @@ class BaseSetCoveringMachine(object):
             appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
 
             if model_append_callback is not None:
-                model_append_callback(appended_attribute)
+                model_append_callback(appended_attribute, best_attribute_idx)
 
             del appended_attribute
 
