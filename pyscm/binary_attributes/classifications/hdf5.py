@@ -53,7 +53,7 @@ def build_row_mask(example_idx, n_examples, mask_n_bits):
         return np.array(masks, dtype="u" + str(mask_n_bits / 8))
 
 class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
-    def __init__(self, datasets, n_rows, row_block_size=None, col_block_size=None):
+    def __init__(self, datasets, n_rows, block_size=None):
         self.datasets = datasets
         self.dataset_initial_n_rows = list(n_rows)
         self.dataset_n_rows = list(n_rows)
@@ -62,12 +62,17 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         self.dataset_n_cols = self.datasets[0].shape[1]
         self.dataset_dtype = self.datasets[0].dtype
         self.dataset_removed_rows = [[] for _ in xrange(len(self.datasets))]
+        self.block_size = (None, None)
 
-        # TODO: might not be chunking!
-        if row_block_size is None:
-            self.row_block_size = self.datasets[0].chunks[0]
-        if col_block_size is None:
-            self.col_block_size = self.datasets[0].chunks[1]
+        if block_size is None:
+            if self.datasets[0].chunks is None:
+                self.block_size = (1, self.datasets[0].shape[1])
+            else:
+                self.block_size = self.datasets[0].chunks
+        else:
+            if len(block_size) != 2 or not isinstance(block_size[0], int) or not isinstance(block_size[1], int):
+                raise ValueError("The block size must be a tuple of 2 integers.")
+            self.block_size = block_size
 
         for dataset in self.datasets[1:]:
             if dataset.shape[1] != self.dataset_n_cols:
@@ -121,8 +126,17 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             if ds_idx == -1:
                 raise IndexError("Row index %d is out of bounds for array of shape (%d, %d)" % (row_idx, self.shape[0],
                                                                                                 self.shape[1]))
-            dataset_removed_rows[ds_idx].append(row_idx - self.dataset_start_example[ds_idx])
+            # Find which row in the dataset corresponds to the element to delete
+            # TODO: This is inefficient!
+            relative_row_index = row_idx - self.dataset_start_example[ds_idx]
+            current_idx = -1
+            n_active_elements_seen = 0
+            while n_active_elements_seen < relative_row_index + 1:
+                current_idx += 1
+                if current_idx not in self.dataset_removed_rows[ds_idx]:
+                    n_active_elements_seen += 1
 
+            dataset_removed_rows[ds_idx].append(current_idx)
         # Update the dataset removed row lists
         # Update the start and stop indexes
         # Adjust the shape
@@ -135,11 +149,6 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             self.dataset_stop_example[i] = self.dataset_n_rows[i] + (0 if i == 0 else self.dataset_stop_example[i - 1])
             self.dataset_start_example[i] = 0 if i == 0 else self.dataset_stop_example[i - 1]
         self.total_n_rows = sum(self.dataset_n_rows)
-        #print "New total rows:", self.total_n_rows
-        #print "New number of rows by dataset:", self.dataset_n_rows
-        #print "The removed rows by dataset are:", self.dataset_removed_rows
-        #print "The new dataset start indexes are:", self.dataset_start_example
-        #print "The new dataset stop indexes are:", self.dataset_stop_example
 
     @property
     def shape(self):
@@ -167,53 +176,52 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             return np.array(masks, dtype="u" + str(mask_n_bits / 8))
 
         # Find the rows that occur in each dataset and their relative index
-        # XXX: This could be faster if a binary search was used.
         rows = np.sort(rows)
         dataset_relative_rows = [[] for _ in xrange(len(self.datasets))]
         for row_idx in rows:
             ds_idx = self._get_row_dataset(row_idx)
             if ds_idx != -1:
-                # This is where we work the magic!
-                # Find the number of deleted rows skipped and add this to the relative index
-                relative_row_idx = row_idx - self.dataset_start_example[ds_idx]
-                deleted_row_offset = len(np.where(np.array(self.dataset_removed_rows[ds_idx]) <= relative_row_idx)[0])
-                relative_row_idx += deleted_row_offset
-                print "The dataset index is:", ds_idx, ". The relative index is:", relative_row_idx, ". I skipped", deleted_row_offset, "deleted rows."
-                dataset_relative_rows[ds_idx].append(relative_row_idx)
+
+                # Find which row in the dataset corresponds to the requested row
+                # TODO: This is inefficient!
+                relative_row_index = row_idx - self.dataset_start_example[ds_idx]
+                current_idx = -1
+                n_active_elements_seen = 0
+                while n_active_elements_seen < relative_row_index + 1:
+                    current_idx += 1
+                    if current_idx not in self.dataset_removed_rows[ds_idx]:
+                        n_active_elements_seen += 1
+
+                dataset_relative_rows[ds_idx].append(current_idx)
             else:
                 raise IndexError("Row index %d is out of bounds for array of shape (%d, %d)" % (row_idx, self.shape[0],
                                                                                                 self.shape[1]))
         # Create a row mask for each dataset
         dataset_row_masks = [build_row_mask(dataset_relative_rows[i],
-                                            self.dataset_n_rows[i],
+                                            self.dataset_initial_n_rows[i],
                                             self.dataset_pack_size)
                              if len(dataset_relative_rows[i]) > 0 else []
                              for i in xrange(len(self.datasets))]
         del dataset_relative_rows
 
         # For each dataset load the rows for which the mask is not 0. Support column slicing aswell
-        n_col_blocks = int(ceil(1.0 * self.dataset_n_cols / self.col_block_size))
+        n_col_blocks = int(ceil(1.0 * self.dataset_n_cols / self.block_size[1]))
         for i, dataset in enumerate(self.datasets):
             row_mask = dataset_row_masks[i]
 
             if len(row_mask) == 0:
-                # print "Dont need to load anything from", i+1
-                # print
                 continue
 
             rows_to_load = np.where(row_mask != 0)[0]
-            # print "The row masks are:", row_mask
-            # print "We must only load rows:", rows_to_load
-            # print "Their masks are:", row_mask[rows_to_load]
 
-            n_row_blocks = int(ceil(1.0 * len(rows_to_load) / self.row_block_size))
+            n_row_blocks = int(ceil(1.0 * len(rows_to_load) / self.block_size[0]))
 
             for row_block in xrange(n_row_blocks):
                 for col_block in xrange(n_col_blocks):
 
                     # Load the appropriate rows/columns based on the block sizes
-                    block = dataset[rows_to_load[row_block * self.row_block_size:(row_block + 1) * self.row_block_size],
-                            col_block * self.col_block_size:(col_block + 1)*self.col_block_size]
+                    block = dataset[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]],
+                            col_block * self.block_size[1]:(col_block + 1)*self.block_size[1]]
 
                     # Popcount
                     if len(block.shape) == 1:
@@ -221,7 +229,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
                     self.inplace_popcount(block, row_mask)
 
                     # Increment the sum
-                    result[col_block * self.col_block_size:(col_block + 1) * self.col_block_size] += np.sum(block, axis=0)
+                    result[col_block * self.block_size[1]:(col_block + 1) * self.block_size[1]] += np.sum(block, axis=0)
 
         return result
 
@@ -235,32 +243,3 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
 #TODO: Support unpacked learning from HDF5
 class HDF5UnpackedAttributeClassifications(BaseAttributeClassifications):
     pass
-
-if __name__ == "__main__":
-    h_file = h.File('test.hdf',driver='core',backing_store=False)
-
-    ds1 = np.array([[1, 0, 0],
-                    [0, 1, 0],
-                    [1, 1, 1]], dtype=np.uint32)
-    ds2 = np.array([[0, 1, 0],
-                    [0, 1, 1],
-                    [1, 1, 1]], dtype=np.uint32)
-    ds3 = np.array([[1, 1, 0],
-                    [1, 0, 1],
-                    [1, 0, 0]], dtype=np.uint32)
-
-    ds1 = h_file.create_dataset("ds1", data=ds1, chunks=(1, 3))
-    ds2 = h_file.create_dataset("ds2", data=ds2, chunks=(1, 3))
-    ds3 = h_file.create_dataset("ds3", data=ds3, chunks=(1, 3))
-
-    ac = HDF5PackedAttributeClassifications([ds1, ds2, ds3], [96, 96, 96])
-
-    print "Shape is:", ac.shape
-    remove = [0, 31, 97, 145, 234]
-    ac.remove_rows(remove)
-    print "Removing:",
-    print "New shape is:", ac.shape
-
-    #ac.sum_rows([31, 178, 283])
-
-    print ac.get_column(0)
