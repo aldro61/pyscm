@@ -62,6 +62,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         self.dataset_n_cols = self.datasets[0].shape[1]
         self.dataset_dtype = self.datasets[0].dtype
         self.dataset_removed_rows = [[] for _ in xrange(len(self.datasets))]
+        self.dataset_removed_rows_mask = [np.zeros(self.dataset_initial_n_rows[i], dtype=np.bool) for i in xrange(len(self.datasets))]
         self.block_size = (None, None)
 
         if block_size is None:
@@ -133,7 +134,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             n_active_elements_seen = 0
             while n_active_elements_seen < relative_row_index + 1:
                 current_idx += 1
-                if current_idx not in self.dataset_removed_rows[ds_idx]:
+                if not self.dataset_removed_rows_mask[ds_idx][current_idx]:
                     n_active_elements_seen += 1
 
             dataset_removed_rows[ds_idx].append(current_idx)
@@ -145,6 +146,8 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         for i in xrange(len(self.datasets)):
             if len(dataset_removed_rows[i]) > 0:
                 self.dataset_removed_rows[i] = sorted(set(self.dataset_removed_rows[i] + dataset_removed_rows[i]))
+                self.dataset_removed_rows_mask[i] = np.zeros(self.dataset_initial_n_rows[i], dtype=np.bool)
+                self.dataset_removed_rows_mask[i][self.dataset_removed_rows[i]] = True
                 self.dataset_n_rows[i] = self.dataset_initial_n_rows[i] - len(self.dataset_removed_rows[i])
             self.dataset_stop_example[i] = self.dataset_n_rows[i] + (0 if i == 0 else self.dataset_stop_example[i - 1])
             self.dataset_start_example[i] = 0 if i == 0 else self.dataset_stop_example[i - 1]
@@ -189,7 +192,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
                 n_active_elements_seen = 0
                 while n_active_elements_seen < relative_row_index + 1:
                     current_idx += 1
-                    if current_idx not in self.dataset_removed_rows[ds_idx]:
+                    if not self.dataset_removed_rows_mask[ds_idx][current_idx]:
                         n_active_elements_seen += 1
 
                 dataset_relative_rows[ds_idx].append(current_idx)
@@ -209,6 +212,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         for i, dataset in enumerate(self.datasets):
             row_mask = dataset_row_masks[i]
 
+            # TODO: Could this be true? I don't think so.
             if len(row_mask) == 0:
                 continue
 
@@ -226,7 +230,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
                     # Popcount
                     if len(block.shape) == 1:
                         block = block.reshape(1, -1)
-                    self.inplace_popcount(block, row_mask)
+                    self.inplace_popcount(block, row_mask[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]]])
 
                     # Increment the sum
                     result[col_block * self.block_size[1]:(col_block + 1) * self.block_size[1]] += np.sum(block, axis=0)
