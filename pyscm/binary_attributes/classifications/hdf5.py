@@ -221,6 +221,8 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             n_row_blocks = int(ceil(1.0 * len(rows_to_load) / self.block_size[0]))
 
             for row_block in xrange(n_row_blocks):
+                block_row_mask = row_mask[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]]]
+
                 for col_block in xrange(n_col_blocks):
 
                     # Load the appropriate rows/columns based on the block sizes
@@ -230,7 +232,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
                     # Popcount
                     if len(block.shape) == 1:
                         block = block.reshape(1, -1)
-                    self.inplace_popcount(block, row_mask[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]]])
+                    self.inplace_popcount(block, block_row_mask)
 
                     # Increment the sum
                     result[col_block * self.block_size[1]:(col_block + 1) * self.block_size[1]] += np.sum(block, axis=0)
