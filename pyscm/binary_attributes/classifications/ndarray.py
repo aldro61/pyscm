@@ -66,7 +66,7 @@ class NumpyPackedAttributeClassifications(BaseAttributeClassifications):
         super(BaseAttributeClassifications, self).__init__()
 
     def get_column(self, column):
-        return _unpack_binary_bytes_from_ints(self.array[:, idx])[: self.n_examples]
+        return _unpack_binary_bytes_from_ints(self.array[:, column])[: self.n_examples]
 
     @property
     def shape(self):
