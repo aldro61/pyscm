@@ -25,7 +25,6 @@ import numpy as np
 from .base import BaseSetCoveringMachine
 from ..model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 from ..binary_attributes.base import SingleBinaryAttributeList, MetaBinaryAttributeList
-from ..utils import _conditional_print, _split_into_contiguous
 
 class SetCoveringMachine(BaseSetCoveringMachine):
     """
