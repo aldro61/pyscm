@@ -158,6 +158,9 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         return self.total_n_rows, self.dataset_n_cols
 
     def sum_rows(self, rows):
+        """
+        Note: Assumes that rows does not contain duplicate elements. Rows will not be considered more than once.
+        """
         rows = np.asarray(rows)
         result_dtype = _column_sum_dtype(rows)
         result = np.zeros(self.dataset_n_cols, dtype=result_dtype)
