@@ -123,8 +123,9 @@ class BaseSetCoveringMachine(object):
             # of the previous iteration and the current iteration. For an attribute to be selectable, it must
             # have a difference greater than 0. If this difference is less or equal to 0, we want to discard
             # the attribute.
+            # This has been commented out to use the training risk decrease only as a tiebreaker!
             training_risk_decrease = 1.0 * negative_cover_count - positive_error_count
-            utilities[training_risk_decrease <= 0] = -np.infty
+            #utilities[training_risk_decrease <= 0] = -np.infty
            
             best_utility = np.max(utilities)
             # If the best attribute does not reduce the training risk, stop.
