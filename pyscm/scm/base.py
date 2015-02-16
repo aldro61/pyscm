@@ -126,7 +126,8 @@ class BaseSetCoveringMachine(object):
                                                               positive_error_count[best_utility_idx] != 0)]
             if len(best_utility_idx) == 0:
                 self._verbose_print("The attribute of maximal utility does not cover negative examples or make errors" +
-                                    "on positive examples. It will not be added to the model. Stopping here.")
+                                    " on positive examples. It will not be added to the model. Stopping here.")
+                break
 
             # Compute the training risk decrease with respect to the previous iteration.
             # This expression was obtained by simplifying the difference between the number of training errors
