@@ -127,35 +127,31 @@ class BaseSetCoveringMachine(object):
                 attribute_block_size=attribute_block_size,
                 **utility_function_additional_args)
 
-            # Compute the training risk decrease with respect to the previous iteration.
-            # If an attribute does not reduce the training risk, we do not want to select it.
-            # This expression was obtained by simplifying the difference between the number of training errors
-            # of the previous iteration and the current iteration. For an attribute to be selectable, it must
-            # have a difference greater than 0. If this difference is less or equal to 0, we want to discard
-            # the attribute.
-            training_risk_decrease = 1.0 * negative_cover_count - positive_error_count
-            utilities[training_risk_decrease <= 0] = -np.infty
-           
-            best_utility = np.max(utilities)
-            # If the best attribute does not reduce the training risk, stop.
-            if best_utility == -np.infty:
-                self._verbose_print("The best attribute does not reduce the training risk. It will not be added to "
-                                    "the model. Stopping here.")
-                break
-
             # Find all the indexes of all attributs with the best utility
-            best_utility_idx = np.where(utilities == best_utility)[0]
+            best_utility_idx = np.where(utilities == np.max(utilities))[0]
+            n_best_utility_attributes = len(best_utility_idx)
+
+            # Do not select attributes that cover no negative examples and make errors on no positive examples
+            best_utility_idx = best_utility_idx[np.logical_or(negative_cover_count[best_utility_idx] != 0,
+                                                              positive_error_count[best_utility_idx] != 0)]
+            if len(best_utility_idx) == 0:
+                self._verbose_print("The attribute of maximal utility does not cover negative examples or make errors" +
+                                    "on positive examples. It will not be added to the model. Stopping here.")
+
+            # Compute the training risk decrease with respect to the previous iteration.
+            # This expression was obtained by simplifying the difference between the number of training errors
+            # of the previous iteration and the current iteration.
+            training_risk_decrease = 1.0 * negative_cover_count[best_utility_idx] - positive_error_count[best_utility_idx]
 
             # Select the attribute which most decreases the training risk out of all the attributes of best utility
-            best_training_risk_decrease = np.argmax(training_risk_decrease[best_utility_idx])
-            best_attribute_idx = best_utility_idx[best_training_risk_decrease]
+            best_attribute_idx = best_utility_idx[np.argmax(training_risk_decrease)]
             del best_utility_idx, training_risk_decrease
 
-            self._verbose_print("Greatest utility is " + str(best_utility))
+            self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
             # Save the computation if verbose is off
             if self.verbose:
-                self._verbose_print("There are " + str(len(np.where(utilities == utilities[best_attribute_idx])[0]) -
-                                                       1) + " attributes with the same utility.")
+                self._verbose_print("There are " + str(n_best_utility_attributes - 1) +
+                                    " attributes with the same utility.")
             del utilities
 
             appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
