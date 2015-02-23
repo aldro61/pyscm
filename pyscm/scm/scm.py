@@ -117,7 +117,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
 
         self._flags["PROBABILISTIC_PREDICTIONS"] = True
 
-    def fit(self, binary_attributes, y, X=None, meta_attribute_classifications=None, model_append_callback=None):
+    def fit(self, binary_attributes, y, X=None, meta_attribute_classifications=None, iteration_callback=None):
         """
         """
         if X is None and meta_attribute_classifications is None:
@@ -147,7 +147,7 @@ class MetaSetCoveringMachine(BaseSetCoveringMachine):
                                                 y=y,
                                                 X=X,
                                                 attribute_classifications=meta_attribute_classifications,
-                                                model_append_callback=model_append_callback,
+                                                iteration_callback=iteration_callback,
                                                 utility__meta_attribute_cardinalities=np.log(
                                                     binary_attributes.cardinalities))
 
