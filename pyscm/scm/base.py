@@ -156,26 +156,10 @@ class BaseSetCoveringMachine(object):
             best_attribute_classifications = attribute_classifications.get_column(best_attribute_idx)
 
             self._verbose_print("Discarding covered negative examples")
-            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
-            # https://github.com/h5py/h5py/issues/425
-            if len(negative_example_idx) > 1:
-                negative_example_idx = negative_example_idx[
-                    best_attribute_classifications[negative_example_idx] != 0]
-            else:
-                keep = best_attribute_classifications[negative_example_idx] != 0
-                keep = keep.reshape((1,))
-                negative_example_idx = negative_example_idx[keep]
+            negative_example_idx = negative_example_idx[best_attribute_classifications[negative_example_idx] != 0]
 
             self._verbose_print("Discarding misclassified positive examples")
-            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
-            # https://github.com/h5py/h5py/issues/425
-            if len(positive_example_idx) > 1:
-                positive_example_idx = positive_example_idx[
-                    best_attribute_classifications[positive_example_idx] != 0]
-            elif len(positive_example_idx) > 0:
-                keep = best_attribute_classifications[positive_example_idx] != 0
-                keep = keep.reshape((1,))
-                positive_example_idx = positive_example_idx[keep]
+            positive_example_idx = positive_example_idx[best_attribute_classifications[positive_example_idx] != 0]
 
             self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
             self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))
