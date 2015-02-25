@@ -25,6 +25,7 @@ from scipy.sparse import issparse
 
 from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
+from .classifications.ndarray import NumpyPackedAttributeClassifications
 from ..utils import _pack_binary_bytes_to_ints
 
 
@@ -146,13 +147,15 @@ class DecisionStumpList(BaseBinaryAttributeList):
         attribute_classifications: numpy_array, (n_examples, n_decision_stumps)
             A matrix containing the labels assigned to each example by each decision stump individually.
         """
+        #TODO: Pack bytes gradually instead of waiting until the end.
         attribute_classifications = np.zeros((X.shape[0], len(self)), dtype=np.uint8)
         block_size = 1000 #TODO: Make this a parameter or compute an optimal value based on memory usage
         for i in xrange(int(ceil(float(len(self))/block_size))):
             tmp = (X[:, self.feature_idx[i*block_size:(i+1)*block_size]] - self.thresholds[i*block_size:(i+1)*block_size]) * self.directions[i*block_size:(i+1)*block_size]
             attribute_classifications[:, i*block_size:(i+1)*block_size][tmp > 0] = 1
             attribute_classifications[:, i*block_size:(i+1)*block_size][tmp <= 0] = 0
-        return _pack_binary_bytes_to_ints(attribute_classifications, int_size=64)
+        return NumpyPackedAttributeClassifications(_pack_binary_bytes_to_ints(attribute_classifications, int_size=64),
+                                                   X.shape[0])
 
     def __len__(self):
         return self.feature_idx.shape[0]
