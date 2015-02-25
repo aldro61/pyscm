@@ -44,8 +44,8 @@ class BaseSetCoveringMachine(object):
         self.max_attributes = max_attributes
         self._flags = {}
 
-    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, model_append_callback=None,
-            example_block_size=64, attribute_block_size=1000, **kwargs):
+    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, tiebreaker=None,
+            iteration_callback=None, **kwargs):
         """
         Fit a SCM model.
 
@@ -67,20 +67,19 @@ class BaseSetCoveringMachine(object):
             be used to precompute the long classification process. If the value is None, the classifications will be
             computed using X. Thus, if attribute_classifications is None, X is expected not to be None.
 
-        model_append_callback: function, arguments: {new_attribute: BinaryAttribute, default=None}
-            A function which is called when a new binary attribute is appended to the model.
+        tie_breaker: function, arguments: best_utility_idx: the index of the binary attributes with the highest utility,
+                                          attribute_classifications: the classification matrix for the binary attributes
+                                          shape=(n_examples, n_attributes), positive_error_count: number of positive
+                                          examples that each binary attribute misclassifies, negative_cover_count:
+                                          number of negative examples that are correctly classified by the binary
+                                          attribute.
+            A function which is called when multiple binary attributes have the same utility in an iteration. It should
+            return the index of the binary attribute to add to the model.
 
-        example_block_size: int, default=64
-            The maximum number of example for which covers are counted at one time. Use this to limit memory usage.
-
-        attribute_block_size: int, default=1000
-            The maximum number of attributes for which covers are counted at one time. Use this to limit memory usage.
-
-        Notes:
-        ------
-        * HDF5: The SCM can learn from a great number of attributes. Storing them in memory can require a large amount
-                of memory space. Therefore, great care is taken to allow attribute_classifications to be a HDF5 dataset.
-                We try to prevent loading the entire dataset into memory.
+        iteration_callback: function, arguments: iteration_info (dict)
+            A function which is called at the end of each iteration. It contains information on the learning process,
+            such as the best attribute and its utility, the attributes that shared the same utility, the remaining
+            examples of each class and more.
         """
         utility_function_additional_args = {}
         if kwargs != None:
@@ -109,12 +108,13 @@ class BaseSetCoveringMachine(object):
             if attribute_classifications.shape[1] != len(binary_attributes):
                 raise ValueError("The number of attributes must match in attribute_classifications and",
                                  "binary_attributes.")
-
-        n_examples = len(y)
-
+            if attribute_classifications.shape[0] != len(y):
+                raise ValueError("The number of lines in attribute_classifications must match the number of training" +
+                                 "examples.")
         del X, y
 
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
+            iteration_info = {}
 
             utilities, \
             positive_error_count, \
@@ -122,73 +122,66 @@ class BaseSetCoveringMachine(object):
                 attribute_classifications=attribute_classifications,
                 positive_example_idx=positive_example_idx,
                 negative_example_idx=negative_example_idx,
-                n_examples=n_examples,
-                example_block_size=example_block_size,
-                attribute_block_size=attribute_block_size,
                 **utility_function_additional_args)
 
             # Find all the indexes of all attributs with the best utility
-            best_utility_idx = np.where(utilities == np.max(utilities))[0]
-            n_best_utility_attributes = len(best_utility_idx)
+            iteration_info["utility_max"] = np.max(utilities)
+            iteration_info["utility_argmax"] = np.where(utilities == iteration_info["utility_max"])[0]
+            iteration_info["utility_argmax_positive_error_counts"] = positive_error_count[iteration_info["utility_argmax"]]
+            iteration_info["utility_argmax_negative_cover_counts"] = negative_cover_count[iteration_info["utility_argmax"]]
 
             # Do not select attributes that cover no negative examples and make errors on no positive examples
-            best_utility_idx = best_utility_idx[np.logical_or(negative_cover_count[best_utility_idx] != 0,
-                                                              positive_error_count[best_utility_idx] != 0)]
+            best_utility_idx = iteration_info["utility_argmax"][np.logical_or(negative_cover_count[iteration_info["utility_argmax"]] != 0, positive_error_count[iteration_info["utility_argmax"]] != 0)]
             if len(best_utility_idx) == 0:
                 self._verbose_print("The attribute of maximal utility does not cover negative examples or make errors" +
-                                    "on positive examples. It will not be added to the model. Stopping here.")
+                                    " on positive examples. It will not be added to the model. Stopping here.")
+                break
 
-            # Compute the training risk decrease with respect to the previous iteration.
-            # This expression was obtained by simplifying the difference between the number of training errors
-            # of the previous iteration and the current iteration.
-            training_risk_decrease = 1.0 * negative_cover_count[best_utility_idx] - positive_error_count[best_utility_idx]
+            if len(best_utility_idx) > 1:
+                if tiebreaker is not None:
+                    best_attribute_idx = tiebreaker(best_utility_idx,
+                                                    attribute_classifications,
+                                                    positive_error_count[best_utility_idx],
+                                                    negative_cover_count[best_utility_idx],
+                                                    positive_example_idx,
+                                                    negative_example_idx)
+                else:
+                    # Default tie breaker
+                    training_risk_decrease = 1.0 * negative_cover_count[best_utility_idx] - positive_error_count[best_utility_idx]
+                    best_attribute_idx = best_utility_idx[np.argmax(training_risk_decrease)]
+                    del training_risk_decrease
+            else:
+                best_attribute_idx = best_utility_idx[0]
+            del best_utility_idx
 
-            # Select the attribute which most decreases the training risk out of all the attributes of best utility
-            best_attribute_idx = best_utility_idx[np.argmax(training_risk_decrease)]
-            del best_utility_idx, training_risk_decrease
+            iteration_info["selected_attribute_idx"] = best_attribute_idx
 
             self._verbose_print("Greatest utility is " + str(utilities[best_attribute_idx]))
             # Save the computation if verbose is off
             if self.verbose:
-                self._verbose_print("There are " + str(n_best_utility_attributes - 1) +
+                self._verbose_print("There are " + str(len(iteration_info["utility_argmax"]) - 1) +
                                     " attributes with the same utility.")
             del utilities
 
-            appended_attribute = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
-
-            if model_append_callback is not None:
-                model_append_callback(appended_attribute, best_attribute_idx)
-
-            del appended_attribute
+            iteration_info["selected_attribute"] = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
 
             # Get the best attribute's classification for each example
-            best_attribute_classifications = \
-                _unpack_binary_bytes_from_ints(attribute_classifications[:, best_attribute_idx])[:n_examples]
+            best_attribute_classifications = attribute_classifications.get_column(best_attribute_idx)
 
             self._verbose_print("Discarding covered negative examples")
-            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
-            # https://github.com/h5py/h5py/issues/425
-            if len(negative_example_idx) > 1:
-                negative_example_idx = negative_example_idx[
-                    best_attribute_classifications[negative_example_idx] != 0]
-            else:
-                keep = best_attribute_classifications[negative_example_idx] != 0
-                keep = keep.reshape((1,))
-                negative_example_idx = negative_example_idx[keep]
+            negative_example_idx = negative_example_idx[best_attribute_classifications[negative_example_idx] != 0]
 
             self._verbose_print("Discarding misclassified positive examples")
-            # TODO: This is a workaround to issue #425 of h5py (Currently unsolved)
-            # https://github.com/h5py/h5py/issues/425
-            if len(positive_example_idx) > 1:
-                positive_example_idx = positive_example_idx[
-                    best_attribute_classifications[positive_example_idx] != 0]
-            elif len(positive_example_idx) > 0:
-                keep = best_attribute_classifications[positive_example_idx] != 0
-                keep = keep.reshape((1,))
-                positive_example_idx = positive_example_idx[keep]
+            positive_example_idx = positive_example_idx[best_attribute_classifications[positive_example_idx] != 0]
 
             self._verbose_print("Remaining negative examples:" + str(len(negative_example_idx)))
             self._verbose_print("Remaining positive examples:" + str(len(positive_example_idx)))
+
+            iteration_info["remaining_positive_examples_idx"] = positive_example_idx
+            iteration_info["remaining_negative_examples_idx"] = negative_example_idx
+
+            if iteration_callback is not None:
+                iteration_callback(iteration_info)
 
     def predict(self, X):
         """
@@ -216,10 +209,6 @@ class BaseSetCoveringMachine(object):
         self.model.add(new_attribute)
         self._verbose_print("Attribute added to the model: " + str(new_attribute))
         return new_attribute
-
-    def _get_binary_attribute_utilities(self, attribute_classifications, positive_example_idx, negative_example_idx,
-                                        n_examples, example_block_size, attribute_block_size):
-        raise NotImplementedError()
 
     def _get_example_idx_by_class_conjunction(self, y):
         positive_example_idx = np.where(y == 1)[0]
