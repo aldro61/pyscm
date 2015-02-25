@@ -22,7 +22,6 @@ import numpy as np
 
 from ..utils import _class_to_string
 
-
 class BaseMetaBinaryAttribute(object):
     """
     A binary attribute mixin class

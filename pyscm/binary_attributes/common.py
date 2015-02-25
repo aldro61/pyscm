@@ -21,8 +21,8 @@
 import numpy as np
 
 from .base import BaseBinaryAttributeList
+from .classifications.ndarray import NumpyPackedAttributeClassifications
 from ..utils import _pack_binary_bytes_to_ints
-
 
 class DefaultBinaryAttributeList(BaseBinaryAttributeList):
     """
@@ -65,9 +65,11 @@ class DefaultBinaryAttributeList(BaseBinaryAttributeList):
         attribute_classifications: numpy_array, (n_examples, n_binary_attributes)
             List of labels assigned to each example classified according to their binary attributes.
         """
+        #TODO: Pack bytes gradually instead of waiting until the end.
         attribute_classifications = np.zeros((X.shape[0], len(self)), dtype=np.uint8)
         for i, ba in enumerate(self.binary_attributes):
             attribute_classifications[:, i] = ba.classify(X)
-        return _pack_binary_bytes_to_ints(attribute_classifications, int_size=64)
+        return NumpyPackedAttributeClassifications(_pack_binary_bytes_to_ints(attribute_classifications, int_size=64),
+                                                   X.shape[0])
 
 
