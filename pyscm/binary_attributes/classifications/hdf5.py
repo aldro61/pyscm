@@ -110,8 +110,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         super(BaseAttributeClassifications, self).__init__()
 
     def get_columns(self, columns):
-        columns = np.reshape(columns, -1)
-        result = np.zeros((self.total_n_rows, len(columns)), dtype=np.uint8)
+        result = np.zeros((self.total_n_rows,) if isinstance(columns, int) else (self.total_n_rows, len(columns)), dtype=np.uint8)
         for i, dataset in enumerate(self.datasets):
             row_mask = np.ones(dataset.shape[0] * self.dataset_pack_size, dtype=np.bool)
             row_mask[self.dataset_initial_n_rows[i] : ] = False
