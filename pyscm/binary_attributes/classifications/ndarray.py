@@ -65,8 +65,8 @@ class NumpyPackedAttributeClassifications(BaseAttributeClassifications):
         self.col_block_size = 1000
         super(BaseAttributeClassifications, self).__init__()
 
-    def get_column(self, column):
-        return _unpack_binary_bytes_from_ints(self.array[:, column])[: self.n_examples]
+    def get_columns(self, columns):
+        return _unpack_binary_bytes_from_ints(self.array[:, columns])[: self.n_examples]
 
     @property
     def shape(self):

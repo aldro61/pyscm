@@ -166,7 +166,7 @@ class BaseSetCoveringMachine(object):
             iteration_info["selected_attribute"] = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
 
             # Get the best attribute's classification for each example
-            best_attribute_classifications = attribute_classifications.get_column(best_attribute_idx)
+            best_attribute_classifications = attribute_classifications.get_columns(best_attribute_idx)
 
             self._verbose_print("Discarding covered negative examples")
             negative_example_idx = negative_example_idx[best_attribute_classifications[negative_example_idx] != 0]

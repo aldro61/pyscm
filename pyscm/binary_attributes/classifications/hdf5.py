@@ -109,14 +109,15 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
 
         super(BaseAttributeClassifications, self).__init__()
 
-    def get_column(self, column):
-        result = np.zeros((self.total_n_rows, len(column)), dtype=np.uint8)
+    def get_columns(self, columns):
+        columns = np.reshape(columns, -1)
+        result = np.zeros((self.total_n_rows, len(columns)), dtype=np.uint8)
         for i, dataset in enumerate(self.datasets):
             row_mask = np.ones(dataset.shape[0] * self.dataset_pack_size, dtype=np.bool)
             row_mask[self.dataset_initial_n_rows[i] : ] = False
             row_mask[self.dataset_removed_rows[i]] = False
             result[self.dataset_start_example[i]:self.dataset_stop_example[i]] = \
-                _unpack_binary_bytes_from_ints(dataset[:, column])[row_mask]
+                _unpack_binary_bytes_from_ints(dataset[:, columns])[row_mask]
         return result
 
     def remove_rows(self, rows):

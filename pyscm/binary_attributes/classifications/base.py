@@ -22,7 +22,7 @@ class BaseAttributeClassifications(object):
     def __init__(self):
         pass
 
-    def get_column(self, column):
+    def get_columns(self, columns):
         raise NotImplementedError()
 
     def remove_rows(self, rows):
