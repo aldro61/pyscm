@@ -18,9 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import numpy as np
-
 from math import ceil
+
+import numpy as np
 from scipy.sparse import issparse
 
 from .base import SingleBinaryAttribute
@@ -74,7 +74,7 @@ class EqualityTest(SingleBinaryAttribute):
             result = X[:, self.feature_idx] != self.value
 
         if issparse(result):
-            result = result.toarray().reshape(result.shape[0],)
+            result = result.toarray().reshape(result.shape[0], )
 
         return np.asarray(result, dtype=np.uint8)
 
@@ -91,7 +91,7 @@ class EqualityTest(SingleBinaryAttribute):
         """
         return EqualityTest(feature_idx=self.feature_idx,
                             value=self.value,
-                            outcome=False,
+                            outcome=not self.outcome,
                             example_dependencies=self.example_dependencies)
 
     def __str__(self):
@@ -144,21 +144,22 @@ class EqualityTestList(BaseBinaryAttributeList):
         attribute_classifications: numpy_array, (n_examples, n_decision_stumps)
             A matrix containing the labels assigned to each example by each equality test individually.
         """
-        #TODO: Pack bytes gradually instead of waiting until the end.
+        # TODO: Pack bytes gradually instead of waiting until the end.
         attribute_classifications = np.zeros((X.shape[0], len(self)), dtype=np.uint8)
-        block_size = 1000 #TODO: Make this a parameter or compute an optimal value based on memory usage
-        for i in xrange(int(ceil(float(len(self))/block_size))):
+        block_size = 1000  #TODO: Make this a parameter or compute an optimal value based on memory usage
+        for i in xrange(int(ceil(float(len(self)) / block_size))):
             tmp = np.logical_xor(
-                X[:, self.feature_idx[i*block_size:(i+1)*block_size]] == self.values[i*block_size:(i+1)*block_size],
-                self.outcomes[i*block_size:(i+1)*block_size])
-            np.logical_not(tmp, out=attribute_classifications[:, i*block_size:(i+1)*block_size])
+                X[:, self.feature_idx[i * block_size:(i + 1) * block_size]] == self.values[
+                                                                               i * block_size:(i + 1) * block_size],
+                self.outcomes[i * block_size:(i + 1) * block_size])
+            np.logical_not(tmp, out=attribute_classifications[:, i * block_size:(i + 1) * block_size])
         return NumpyPackedAttributeClassifications(_pack_binary_bytes_to_ints(attribute_classifications, int_size=64),
                                                    X.shape[0])
 
     def __eq__(self, other):
         if len(self) != len(other):
             return False
-        for k,v in self.__dict__.iteritems():
+        for k, v in self.__dict__.iteritems():
             comparison = other.__dict__.get(k, None) == v
             try:
                 iter(comparison)
