@@ -17,9 +17,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import h5py as h
-import numpy as np
 from math import ceil
+
+import numpy as np
+
 from .base import BaseAttributeClassifications
 from .popcount import inplace_popcount_32, inplace_popcount_64
 from ...utils import _unpack_binary_bytes_from_ints
@@ -37,20 +38,22 @@ def _column_sum_dtype(array):
 
     return dtype
 
+
 # Builds a mask to turn off the bits of the rows we do not want to count in the sum.
 def build_row_mask(example_idx, n_examples, mask_n_bits):
-        if mask_n_bits not in [8, 16, 32, 64, 128]:
-            raise ValueError("Unsupported mask format. Use 8, 16, 32, 64 or 128 bits.")
+    if mask_n_bits not in [8, 16, 32, 64, 128]:
+        raise ValueError("Unsupported mask format. Use 8, 16, 32, 64 or 128 bits.")
 
-        n_masks = int(ceil(float(n_examples) / mask_n_bits))
-        masks = [0] * n_masks
+    n_masks = int(ceil(float(n_examples) / mask_n_bits))
+    masks = [0] * n_masks
 
-        for idx in example_idx:
-            example_mask = idx / mask_n_bits
-            example_mask_idx = mask_n_bits - (idx - mask_n_bits * example_mask) - 1
-            masks[example_mask] |= 1 << example_mask_idx
+    for idx in example_idx:
+        example_mask = idx / mask_n_bits
+        example_mask_idx = mask_n_bits - (idx - mask_n_bits * example_mask) - 1
+        masks[example_mask] |= 1 << example_mask_idx
 
-        return np.array(masks, dtype="u" + str(mask_n_bits / 8))
+    return np.array(masks, dtype="u" + str(mask_n_bits / 8))
+
 
 class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
     def __init__(self, datasets, n_rows, block_size=None):
@@ -62,7 +65,8 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         self.dataset_n_cols = self.datasets[0].shape[1]
         self.dataset_dtype = self.datasets[0].dtype
         self.dataset_removed_rows = [[] for _ in xrange(len(self.datasets))]
-        self.dataset_removed_rows_mask = [np.zeros(self.dataset_initial_n_rows[i], dtype=np.bool) for i in xrange(len(self.datasets))]
+        self.dataset_removed_rows_mask = [np.zeros(self.dataset_initial_n_rows[i], dtype=np.bool) for i in
+                                          xrange(len(self.datasets))]
         self.block_size = (None, None)
 
         if block_size is None:
@@ -110,10 +114,16 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         super(BaseAttributeClassifications, self).__init__()
 
     def get_columns(self, columns):
-        result = np.zeros((self.total_n_rows,) if isinstance(columns, int) else (self.total_n_rows, len(columns)), dtype=np.uint8)
+        if isinstance(columns, int):
+            result = np.zeros((self.total_n_rows,), dtype=np.uint8)
+        elif isinstance(columns, slice):
+            result = np.zeros((self.total_n_rows, len(xrange(*columns.indices(self.shape[1])))), dtype=np.uint8)
+        else:
+            result = np.zeros((self.total_n_rows, len(columns)), dtype=np.uint8)
+
         for i, dataset in enumerate(self.datasets):
             row_mask = np.ones(dataset.shape[0] * self.dataset_pack_size, dtype=np.bool)
-            row_mask[self.dataset_initial_n_rows[i] : ] = False
+            row_mask[self.dataset_initial_n_rows[i]:] = False
             row_mask[self.dataset_removed_rows[i]] = False
             result[self.dataset_start_example[i]:self.dataset_stop_example[i]] = \
                 _unpack_binary_bytes_from_ints(dataset[:, columns])[row_mask]
@@ -166,7 +176,7 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         result = np.zeros(self.dataset_n_cols, dtype=result_dtype)
 
         # Builds a mask to turn off the bits of the rows we do not want to count in the sum.
-        #TODO: this could be in utils as build int mask, example_idx could be set_bit_idx
+        # TODO: this could be in utils as build int mask, example_idx could be set_bit_idx
         def build_row_mask(example_idx, n_examples, mask_n_bits):
             if mask_n_bits not in [8, 16, 32, 64, 128]:
                 raise ValueError("Unsupported mask format. Use 8, 16, 32, 64 or 128 bits.")
@@ -224,13 +234,14 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
             n_row_blocks = int(ceil(1.0 * len(rows_to_load) / self.block_size[0]))
 
             for row_block in xrange(n_row_blocks):
-                block_row_mask = row_mask[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]]]
+                block_row_mask = row_mask[
+                    rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]]]
 
                 for col_block in xrange(n_col_blocks):
 
                     # Load the appropriate rows/columns based on the block sizes
                     block = dataset[rows_to_load[row_block * self.block_size[0]:(row_block + 1) * self.block_size[0]],
-                            col_block * self.block_size[1]:(col_block + 1)*self.block_size[1]]
+                            col_block * self.block_size[1]:(col_block + 1) * self.block_size[1]]
 
                     # Popcount
                     if len(block.shape) == 1:
@@ -245,10 +256,11 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
     def _get_row_dataset(self, row_idx):
         # TODO: This could be faster if we used a binary search
         for i in xrange(len(self.datasets)):
-                if self.dataset_stop_example[i] > row_idx >= self.dataset_start_example[i]:
-                    return i
+            if self.dataset_stop_example[i] > row_idx >= self.dataset_start_example[i]:
+                return i
         return -1
 
-#TODO: Support unpacked learning from HDF5
+
+# TODO: Support unpacked learning from HDF5
 class HDF5UnpackedAttributeClassifications(BaseAttributeClassifications):
     pass
