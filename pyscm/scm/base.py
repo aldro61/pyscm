@@ -124,7 +124,7 @@ class BaseSetCoveringMachine(object):
                 negative_example_idx=negative_example_idx,
                 **utility_function_additional_args)
 
-            # Find all the indexes of all attributs with the best utility
+            # Find all the indexes of all attributes with the best utility
             iteration_info["utility_max"] = np.max(utilities)
             iteration_info["utility_argmax"] = np.where(utilities == iteration_info["utility_max"])[0]
             iteration_info["utility_argmax_positive_error_counts"] = positive_error_count[iteration_info["utility_argmax"]]
@@ -137,7 +137,11 @@ class BaseSetCoveringMachine(object):
                                     " on positive examples. It will not be added to the model. Stopping here.")
                 break
 
-            if len(best_utility_idx) > 1:
+            elif len(best_utility_idx) == 1:
+                best_attribute_idx = best_utility_idx[0]
+                iteration_info["tiebreaker_n_optimal"] = 1
+
+            elif len(best_utility_idx) > 1:
                 if tiebreaker is not None:
                     best_attribute_idx = tiebreaker(best_utility_idx,
                                                     attribute_classifications,
@@ -148,10 +152,11 @@ class BaseSetCoveringMachine(object):
                 else:
                     # Default tie breaker
                     training_risk_decrease = 1.0 * negative_cover_count[best_utility_idx] - positive_error_count[best_utility_idx]
-                    best_attribute_idx = best_utility_idx[np.argmax(training_risk_decrease)]
+                    best_attribute_idx = best_utility_idx[training_risk_decrease == training_risk_decrease.max()]
                     del training_risk_decrease
-            else:
-                best_attribute_idx = best_utility_idx[0]
+
+                iteration_info["tiebreaker_n_optimal"] = len(best_attribute_idx)
+                best_attribute_idx = best_attribute_idx[0]  # If many are equivalent, just take the first one.
             del best_utility_idx
 
             iteration_info["selected_attribute_idx"] = best_attribute_idx
