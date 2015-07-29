@@ -139,7 +139,7 @@ class BaseSetCoveringMachine(object):
 
             elif len(best_utility_idx) == 1:
                 best_attribute_idx = best_utility_idx[0]
-                iteration_info["tiebreaker_n_optimal"] = 1
+                iteration_info["tiebreaker_optimal_idx"] = best_attribute_idx
 
             elif len(best_utility_idx) > 1:
                 if tiebreaker is not None:
@@ -155,7 +155,7 @@ class BaseSetCoveringMachine(object):
                     best_attribute_idx = best_utility_idx[training_risk_decrease == training_risk_decrease.max()]
                     del training_risk_decrease
 
-                iteration_info["tiebreaker_n_optimal"] = len(best_attribute_idx)
+                iteration_info["tiebreaker_optimal_idx"] = best_attribute_idx
                 best_attribute_idx = best_attribute_idx[0]  # If many are equivalent, just take the first one.
             del best_utility_idx
 
