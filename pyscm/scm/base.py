@@ -98,6 +98,9 @@ class BaseSetCoveringMachine(object):
                             str(self._classes[0]) + ")")
 
         positive_example_idx, negative_example_idx = self._get_example_idx_by_class(y)
+        y = np.zeros(len(y), dtype=np.uint8)
+        y[positive_example_idx] = 1
+        y[negative_example_idx] = 0
 
         self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
@@ -111,8 +114,9 @@ class BaseSetCoveringMachine(object):
             if attribute_classifications.shape[0] != len(y):
                 raise ValueError("The number of lines in attribute_classifications must match the number of training" +
                                  "examples.")
-        del X, y
+        del X
 
+        model_attributes_idx = []  # Contains the index of the attributes in the model
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
             iteration_info = {}
 
@@ -169,6 +173,7 @@ class BaseSetCoveringMachine(object):
             del utilities
 
             iteration_info["selected_attribute"] = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+            model_attributes_idx.append(best_attribute_idx)
 
             # Get the best attribute's classification for each example
             best_attribute_classifications = attribute_classifications.get_columns(best_attribute_idx)
@@ -187,6 +192,35 @@ class BaseSetCoveringMachine(object):
 
             if iteration_callback is not None:
                 iteration_callback(iteration_info)
+
+        # Compute the feature importances
+        # --------------------------------
+
+        # new method
+        n_covered_negative_examples = np.zeros(len(model_attributes_idx), dtype=np.int)
+        for i, idx in enumerate(model_attributes_idx):
+            n_covered_negative_examples[i] = len(y) - attribute_classifications.get_columns(idx)[y == 0].sum()
+        self.attribute_importances = n_covered_negative_examples
+
+        # # Amputated Risk method
+        # # Find the full model's empirical risk
+        # classifications = np.ones(len(y), dtype=np.uint8)
+        # for idx in model_attributes_idx:
+        #     classifications = np.logical_and(classifications, attribute_classifications.get_columns(idx))
+        # full_model_risk = 1.0 * (y != classifications).sum() / len(y)
+        # print "Full model risk:", full_model_risk
+        #
+        # # Remove each feature from the model and compute the empirical risk of the amputated model
+        # amputated_risks = np.zeros(len(model_attributes_idx), dtype=np.float)
+        # for i, idx in enumerate(model_attributes_idx):
+        #     classifications = np.ones(len(y), dtype=np.uint8)
+        #     for other_idx in (o_idx for o_idx in model_attributes_idx if o_idx != idx):
+        #         classifications = np.logical_and(classifications, attribute_classifications.get_columns(other_idx))
+        #     amputated_risks[i] = 1.0 * (y != classifications).sum() / len(y)
+        #     print "Amputated risk:", amputated_risks[i]
+        #
+        # self.attribute_importances = amputated_risks - full_model_risk
+
 
     def predict(self, X):
         """
