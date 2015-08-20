@@ -44,8 +44,8 @@ class BaseSetCoveringMachine(object):
         self.max_attributes = max_attributes
         self._flags = {}
 
-    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, tiebreaker=None,
-            iteration_callback=None, **kwargs):
+    def fit(self, binary_attributes, y, X=None, attribute_classifications=None, attribute_blacklist=None,
+            tiebreaker=None, iteration_callback=None, **kwargs):
         """
         Fit a SCM model.
 
@@ -66,6 +66,11 @@ class BaseSetCoveringMachine(object):
             The labels (0 or 1) assigned to the examples in X assigned by each binary attribute individually. This can
             be used to precompute the long classification process. If the value is None, the classifications will be
             computed using X. Thus, if attribute_classifications is None, X is expected not to be None.
+
+        attribute_blacklist: numpy_array, shape=(n_attributes_to_blacklist,), dtype=np.uint, default=None
+            The index of binary attributes that should not be included in the learnt model. Note that the utility of
+            these attributes will still be computed, but will not be considered when finding the attribute of maximal
+            utility. If None, all the attributes are considered.
 
         tie_breaker: function, arguments: best_utility_idx: the index of the binary attributes with the highest utility,
                                           attribute_classifications: the classification matrix for the binary attributes
@@ -113,6 +118,14 @@ class BaseSetCoveringMachine(object):
                                  "examples.")
         del X, y
 
+        # Validate the attribute blacklist
+        if attribute_blacklist is not None:
+            attribute_blacklist = np.unique(attribute_blacklist)
+            if len(attribute_blacklist) == attribute_classifications.shape[1]:
+                raise ValueError("The blacklist cannot include all the binary attributes.")
+            self._verbose_print("The following attributes are blacklisted and will not be considered:" + \
+                                str(attribute_blacklist))
+
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
             iteration_info = {}
 
@@ -123,6 +136,10 @@ class BaseSetCoveringMachine(object):
                 positive_example_idx=positive_example_idx,
                 negative_example_idx=negative_example_idx,
                 **utility_function_additional_args)
+
+            # Exclude the attributes in the blacklist
+            if attribute_blacklist is not None:
+                utilities[attribute_blacklist] = -np.infty
 
             # Find all the indexes of all attributes with the best utility
             iteration_info["utility_max"] = np.max(utilities)
