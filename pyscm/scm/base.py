@@ -212,32 +212,12 @@ class BaseSetCoveringMachine(object):
 
         # Compute the feature importances
         # --------------------------------
-
-        # new method
-        n_covered_negative_examples = np.zeros(len(model_attributes_idx), dtype=np.int)
+        self.attribute_importances = np.zeros(len(model_attributes_idx), dtype=np.float)
         for i, idx in enumerate(model_attributes_idx):
-            n_covered_negative_examples[i] = len(y) - attribute_classifications.get_columns(idx)[y == 0].sum()
-        self.attribute_importances = n_covered_negative_examples
-
-        # # Amputated Risk method
-        # # Find the full model's empirical risk
-        # classifications = np.ones(len(y), dtype=np.uint8)
-        # for idx in model_attributes_idx:
-        #     classifications = np.logical_and(classifications, attribute_classifications.get_columns(idx))
-        # full_model_risk = 1.0 * (y != classifications).sum() / len(y)
-        # print "Full model risk:", full_model_risk
-        #
-        # # Remove each feature from the model and compute the empirical risk of the amputated model
-        # amputated_risks = np.zeros(len(model_attributes_idx), dtype=np.float)
-        # for i, idx in enumerate(model_attributes_idx):
-        #     classifications = np.ones(len(y), dtype=np.uint8)
-        #     for other_idx in (o_idx for o_idx in model_attributes_idx if o_idx != idx):
-        #         classifications = np.logical_and(classifications, attribute_classifications.get_columns(other_idx))
-        #     amputated_risks[i] = 1.0 * (y != classifications).sum() / len(y)
-        #     print "Amputated risk:", amputated_risks[i]
-        #
-        # self.attribute_importances = amputated_risks - full_model_risk
-
+            y_neg_example_idx = np.where(y == 0)[0]
+            self.attribute_importances[i] = float(len(y_neg_example_idx)
+                                                    - attribute_classifications.get_columns(idx)[y == 0].sum()) \
+                                                    / len(y_neg_example_idx)
 
     def predict(self, X):
         """
