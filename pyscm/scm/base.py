@@ -103,6 +103,9 @@ class BaseSetCoveringMachine(object):
                             str(self._classes[0]) + ")")
 
         positive_example_idx, negative_example_idx = self._get_example_idx_by_class(y)
+        y = np.zeros(len(y), dtype=np.uint8)
+        y[positive_example_idx] = 1
+        y[negative_example_idx] = 0
 
         self._verbose_print("Got " + str(len(binary_attributes)) + " binary attributes.")
         if attribute_classifications is None:
@@ -116,7 +119,7 @@ class BaseSetCoveringMachine(object):
             if attribute_classifications.shape[0] != len(y):
                 raise ValueError("The number of lines in attribute_classifications must match the number of training" +
                                  "examples.")
-        del X, y
+        del X
 
         # Validate the attribute blacklist
         if attribute_blacklist is not None:
@@ -126,6 +129,7 @@ class BaseSetCoveringMachine(object):
             self._verbose_print("The following attributes are blacklisted and will not be considered:" + \
                                 str(attribute_blacklist))
 
+        model_attributes_idx = []  # Contains the index of the attributes in the model
         while len(negative_example_idx) > 0 and len(self.model) < self.max_attributes:
             iteration_info = {}
 
@@ -186,6 +190,7 @@ class BaseSetCoveringMachine(object):
             del utilities
 
             iteration_info["selected_attribute"] = self._add_attribute_to_model(binary_attributes[best_attribute_idx])
+            model_attributes_idx.append(best_attribute_idx)
 
             # Get the best attribute's classification for each example
             best_attribute_classifications = attribute_classifications.get_columns(best_attribute_idx)
@@ -204,6 +209,14 @@ class BaseSetCoveringMachine(object):
 
             if iteration_callback is not None:
                 iteration_callback(iteration_info)
+
+        # Compute the attribute importances
+        self.attribute_importances = np.zeros(len(model_attributes_idx), dtype=np.float)
+        for i, idx in enumerate(model_attributes_idx):
+            y_neg_example_idx = np.where(y == 0)[0]
+            self.attribute_importances[i] = float(len(y_neg_example_idx)
+                                                    - attribute_classifications.get_columns(idx)[y_neg_example_idx].sum()) \
+                                                    / len(y_neg_example_idx)
 
     def predict(self, X):
         """
