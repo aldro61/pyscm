@@ -210,13 +210,12 @@ class BaseSetCoveringMachine(object):
             if iteration_callback is not None:
                 iteration_callback(iteration_info)
 
-        # Compute the feature importances
-        # --------------------------------
+        # Compute the attribute importances
         self.attribute_importances = np.zeros(len(model_attributes_idx), dtype=np.float)
         for i, idx in enumerate(model_attributes_idx):
             y_neg_example_idx = np.where(y == 0)[0]
             self.attribute_importances[i] = float(len(y_neg_example_idx)
-                                                    - attribute_classifications.get_columns(idx)[y == 0].sum()) \
+                                                    - attribute_classifications.get_columns(idx)[y_neg_example_idx].sum()) \
                                                     / len(y_neg_example_idx)
 
     def predict(self, X):
