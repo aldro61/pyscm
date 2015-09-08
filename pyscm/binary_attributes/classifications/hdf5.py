@@ -114,8 +114,9 @@ class HDF5PackedAttributeClassifications(BaseAttributeClassifications):
         super(BaseAttributeClassifications, self).__init__()
 
     def get_columns(self, columns):
-        if isinstance(columns, int):
+        if hasattr(columns, "__index__"):  # All int types implement the __index__ method (PEP 357)
             result = np.zeros((self.total_n_rows,), dtype=np.uint8)
+            columns = columns.__index__()
         elif isinstance(columns, slice):
             result = np.zeros((self.total_n_rows, len(xrange(*columns.indices(self.shape[1])))), dtype=np.uint8)
         else:
