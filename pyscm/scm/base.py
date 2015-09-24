@@ -210,13 +210,16 @@ class BaseSetCoveringMachine(object):
             if iteration_callback is not None:
                 iteration_callback(iteration_info)
 
-        # Compute the attribute importances
+        #Compute the attribute importances
+        #TODO: implement this without making multiple calls to get_columns. Use rule_predictions instead.
+        # Could implement transparent sorting and desorting of the indexes in get_columns.
         self.attribute_importances = np.zeros(len(model_attributes_idx), dtype=np.float)
+        rule_predictions = attribute_classifications.get_columns(sorted(model_attributes_idx)) # Watch out (sorted for hdf5 slicing...)
+        model_predictions = np.prod(rule_predictions, axis=1)
         for i, idx in enumerate(model_attributes_idx):
-            y_neg_example_idx = np.where(y == 0)[0]
-            self.attribute_importances[i] = float(len(y_neg_example_idx)
-                                                    - attribute_classifications.get_columns(idx)[y_neg_example_idx].sum()) \
-                                                    / len(y_neg_example_idx)
+            model_neg_prediction_idx = np.where(model_predictions == 0)[0]
+            self.attribute_importances[i] = float(len(model_neg_prediction_idx) -
+                                                  attribute_classifications.get_columns(idx)[model_neg_prediction_idx].sum()) / len(model_neg_prediction_idx)
 
     def predict(self, X):
         """
