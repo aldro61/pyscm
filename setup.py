@@ -57,8 +57,8 @@ setup(
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
-    setup_requires=[],
-    install_requires=[],
+    setup_requires=["numpy", "scipy", "scikit-learn"],
+    install_requires=["numpy", "scipy", "scikit-learn"],
 
     author="Alexandre Drouin",
     author_email="aldro61@gmail.com",
