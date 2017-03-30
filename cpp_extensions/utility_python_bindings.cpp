@@ -11,15 +11,18 @@
 static PyObject *
 find_max(PyObject *self, PyObject *args){
     PyArrayObject *X, *y, *X_argsort_by_feature, *example_idx; //borrowed
+    PyArrayObject *feature_weights = NULL;
 
     // Extract the argument values
-    if(!PyArg_ParseTuple(args, "O!O!O!O!",
+    if(!PyArg_ParseTuple(args, "O!O!O!O!|O!",
                          &PyArray_Type, &X,
                          &PyArray_Type, &y,
                          &PyArray_Type, &X_argsort_by_feature,
-                         &PyArray_Type, &example_idx)){
+                         &PyArray_Type, &example_idx,
+                         &PyArray_Type, &feature_weights)){
         return NULL;
     }
+    std::cout << "FEATURE WEIGHTS: " << (feature_weights ? "yup" : "nope") << std::endl;
 
     // Check the type of the numpy arrays
     if(PyArray_TYPE(X) != PyArray_DOUBLE){
@@ -40,6 +43,11 @@ find_max(PyObject *self, PyObject *args){
     if(PyArray_TYPE(example_idx) != PyArray_LONG){
         PyErr_SetString(PyExc_TypeError,
                         "example_idx must be numpy.ndarray type int");
+        return NULL;
+    }
+    if(feature_weights && PyArray_TYPE(feature_weights) != PyArray_DOUBLE){
+        PyErr_SetString(PyExc_TypeError,
+                        "feature_weights must be numpy.ndarray type double");
         return NULL;
     }
 
@@ -64,6 +72,11 @@ find_max(PyObject *self, PyObject *args){
                         "example_idx must be a 1D numpy.ndarray");
         return NULL;
     }
+    if(feature_weights && PyArray_NDIM(example_idx) != 1){
+        PyErr_SetString(PyExc_TypeError,
+                        "feature_weights must be a 1D numpy.ndarray");
+        return NULL;
+    }
 
     // Check that the dimension sizes match
     npy_intp X_dim0 = PyArray_DIM(X, 0);
@@ -72,6 +85,7 @@ find_max(PyObject *self, PyObject *args){
     npy_intp X_argsort_by_feature_dim0 = PyArray_DIM(X_argsort_by_feature, 0);
     npy_intp X_argsort_by_feature_dim1 = PyArray_DIM(X_argsort_by_feature, 1);
     npy_intp example_idx_dim0 = PyArray_DIM(example_idx, 0);
+    npy_intp feature_weights_dim0 = PyArray_DIM(feature_weights, 0);
     if(X_dim0 != y_dim0){
         PyErr_SetString(PyExc_TypeError,
                         "X and y must have the same number of rows");
@@ -92,6 +106,11 @@ find_max(PyObject *self, PyObject *args){
                         "X and example_idx must have the same shape");
         return NULL;
     }
+    if(feature_weights && feature_weights_dim0 != X_dim1){
+        PyErr_SetString(PyExc_TypeError,
+                        "feature_weights must have shape X.shape[1]");
+        return NULL;
+    }
 
     // Extract the data pointer from the number arrays
     double *X_data;
@@ -101,7 +120,10 @@ find_max(PyObject *self, PyObject *args){
     X_argsort_by_feature_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(X_argsort_by_feature));
     example_idx_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(example_idx));
 
-    std::cout << "It works!" << std::endl;
+    if(feature_weights)
+        std::cout << "It works with features!" << std::endl;
+    else
+        std::cout << "It works!" << std::endl;
 
     return Py_BuildValue("");
 }

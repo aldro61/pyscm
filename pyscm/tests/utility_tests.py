@@ -30,3 +30,4 @@ class TrivialTests(TestCase):
         """
         Xas = np.argsort(self.X, axis=0)
         find_max(self.X, self.y, Xas, np.arange(self.n_examples))
+        find_max(self.X, self.y, Xas, np.arange(self.n_examples), np.zeros(self.n_features))
