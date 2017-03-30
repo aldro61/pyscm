@@ -4,7 +4,9 @@ sudo: required
 
 before_install:
   - sudo apt-get install -y --no-install-recommends python-numpy-dev
-  - sudo pip install numpy scipy scikit-learn
+  - pip install --upgrade pip setuptools wheel
+  - pip install --only-binary=numpy,scipy numpy scipy
+  - pip install scikit-learn
 
 script:
   - python setup.py test
