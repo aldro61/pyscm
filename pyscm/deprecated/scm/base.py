@@ -20,9 +20,8 @@
 from functools import partial
 
 import numpy as np
-
-from ..model import conjunction, disjunction
-from ..utils import _conditional_print, _class_to_string, _unpack_binary_bytes_from_ints
+from pyscm.deprecated.model import conjunction, disjunction
+from pyscm.deprecated.utils import _conditional_print, _class_to_string
 
 
 class BaseSetCoveringMachine(object):

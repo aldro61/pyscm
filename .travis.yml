@@ -1,0 +1,14 @@
+language: c
+
+sudo: required
+
+before_install:
+  - sudo apt-get install -y --no-install-recommends python-numpy-dev
+
+script:
+  - python setup.py test
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change

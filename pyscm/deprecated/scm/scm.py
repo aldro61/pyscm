@@ -17,14 +17,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from functools import partial
-from math import ceil
 
 import numpy as np
+from pyscm.deprecated.binary_attributes.base import SingleBinaryAttributeList, MetaBinaryAttributeList
+from pyscm.deprecated.model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
 
 from .base import BaseSetCoveringMachine
-from ..model import ConjunctionModel, DisjunctionModel, conjunction, disjunction
-from ..binary_attributes.base import SingleBinaryAttributeList, MetaBinaryAttributeList
+
 
 class SetCoveringMachine(BaseSetCoveringMachine):
     """

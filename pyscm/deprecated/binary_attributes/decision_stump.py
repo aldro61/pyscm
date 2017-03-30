@@ -18,15 +18,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import numpy as np
-
 from math import ceil
+
+import numpy as np
+from pyscm.deprecated.utils import _pack_binary_bytes_to_ints
 from scipy.sparse import issparse
 
-from .base import SingleBinaryAttribute
 from .base import BaseBinaryAttributeList
+from .base import SingleBinaryAttribute
 from .classifications.ndarray import NumpyPackedAttributeClassifications
-from ..utils import _pack_binary_bytes_to_ints
 
 
 class DecisionStump(SingleBinaryAttribute):
