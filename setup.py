@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+from numpy import get_include as get_numpy_include
 from platform import system as get_os_name
 
 from setuptools import Extension, find_packages, setup
@@ -44,6 +45,11 @@ solver_module = Extension('pyscm._scm_utility',
                                    'cpp_extensions/utility.cpp'],
                           extra_compile_args=["-std=c++0x"] + os_compile_flags)
 
+popcount_module = Extension("pyscm.deprecated.binary_attributes.classifications.popcount",
+                            ["pyscm/deprecated/binary_attributes/classifications/popcount.c"],
+                            include_dirs=[get_numpy_include()],
+                            extra_compile_args=["-march=native"])
+
 
 setup(
     name="pyscm",
@@ -65,7 +71,7 @@ setup(
     keywords="machine learning binary classification set covering machine rules",
     url="https://github.com/aldro61/pyscm",
 
-    ext_modules=[solver_module],
+    ext_modules=[solver_module, popcount_module],
 
     test_suite='nose.collector',
     tests_require=['nose']
