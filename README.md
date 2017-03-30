@@ -1,6 +1,6 @@
 # pySCM - The Set Covering Machine algorithm
 
-[![Build Status](https://travis-ci.org/aldro61/pyscm.svg?branch=master)](https://travis-ci.org/aldro61/pyscm)
+[![Build Status](https://travis-ci.org/aldro61/pyscm.svg?branch=in-memory)](https://travis-ci.org/aldro61/pyscm)
 
 A fast implementation of the Set Covering Machine algorithm using a dynamic programming algorithm to select the rules of greatest utility.
 
