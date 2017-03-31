@@ -13,6 +13,10 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+# TODO: Things that must be tested:
+# * Verify that the the solver handles equivalent feature values correctly
+# * Go crazy, try to break it!
+
 class UtilityTests(TestCase):
     def setUp(self):
         """
