@@ -7,30 +7,26 @@
 
 #include "double_utils.h"
 
+#define MEM_RESIZE_INCREASE_FACTOR 2
+
 class BestUtility{
 private:
-    int mem_size;
+    int mem_size = 0;
 public:
     double best_utility = -INFINITY;
-
-    /* XXX: using pointer arrays of len(n_features). This uses a lot more memory than will be needed
-            However, it is much faster than using a vector and calling push_back each time a new optimal
-            feature is found. We could implement a low_mem version using vectors. */
     long *best_feat_idx;
     double *best_feat_threshold;
     uint8_t *best_feat_kind;
-    int best_n_equiv;
+    int best_n_equiv = 0;
 
-    BestUtility(int const &n_features){
-        this->best_feat_idx = new long[n_features];
-        this->best_feat_threshold = new double[n_features];
-        this->best_feat_kind = new uint8_t[n_features];
+    BestUtility(int const &memory_size){
         this->best_n_equiv = 0;
-        this->mem_size = n_features;
+        this->resize(memory_size);
     }
 
     inline void add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind);
     inline void clear();
+    inline void resize(int const &memory_size);
     inline void set_utility(double const &utility);
     inline bool operator >(double const& utility);
     inline bool operator <(double const& utility);
@@ -39,7 +35,8 @@ public:
 
 inline void BestUtility::add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind) {
     if(this->best_n_equiv == this->mem_size){
-        std::cout << "Error: memory overflow in BestUtility" << std::endl;
+        // We need to resize the array
+        this->resize((this->mem_size > 1 ? this->mem_size : 2) * MEM_RESIZE_INCREASE_FACTOR);
     }
     this->best_feat_idx[this->best_n_equiv] = feature_idx;
     this->best_feat_threshold[this->best_n_equiv] = threshold;
@@ -49,6 +46,31 @@ inline void BestUtility::add_equivalent(long const &feature_idx, double const &t
 
 inline void BestUtility::clear() {
     this->best_n_equiv = 0;
+}
+
+inline void BestUtility::resize(int const &memory_size) {
+    long *best_feat_idx_new = new long[memory_size];
+    double *best_feat_threshold_new = new double[memory_size];
+    uint8_t* best_feat_kind_new = new uint8_t[memory_size];
+
+    // Copy the data
+    bool copied = false;
+    for(int i = 0; i < this->best_n_equiv; i++){
+        copied = true;
+        best_feat_idx_new[i] = this->best_feat_idx[i];
+        best_feat_threshold_new[i] = this->best_feat_threshold[i];
+        best_feat_kind_new[i] = this->best_feat_kind[i];
+    }
+    if(copied){
+        delete [] this->best_feat_idx;
+        delete [] this->best_feat_threshold;
+        delete [] this->best_feat_kind;
+    }
+
+    this->best_feat_idx = best_feat_idx_new;
+    this->best_feat_threshold = best_feat_threshold_new;
+    this->best_feat_kind = best_feat_kind_new;
+    this->mem_size = memory_size;
 }
 
 inline void BestUtility::set_utility(double const &utility) {

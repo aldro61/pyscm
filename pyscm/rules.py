@@ -76,11 +76,11 @@ class DecisionStump(BaseRule):
         The index of the feature
     threshold: float
         The threshold at which the outcome of the rule changes
-    kind: str, default="greater_equal"
-        The case in which the rule returns 1, either "greater_equal" or "less".
+    kind: str, default="greater"
+        The case in which the rule returns 1, either "greater" or "less_equal".
 
     """
-    def __init__(self, feature_idx, threshold, kind="greater_equal"):
+    def __init__(self, feature_idx, threshold, kind="greater"):
         self.feature_idx = feature_idx
         self.threshold = threshold
         self.kind = kind
@@ -101,10 +101,10 @@ class DecisionStump(BaseRule):
             The outcome of the rule (True or False) for each example.
 
         """
-        if self.kind == "greater_equal":
-            c = X[:, self.feature_idx] >= self.threshold
+        if self.kind == "greater":
+            c = X[:, self.feature_idx] > self.threshold
         else:
-            c = X[:, self.feature_idx] < self.threshold
+            c = X[:, self.feature_idx] <= self.threshold
         return c
 
     def inverse(self):
@@ -118,4 +118,7 @@ class DecisionStump(BaseRule):
 
         """
         return DecisionStump(feature_idx=self.feature_idx, threshold=self.threshold,
-                             kind="greater_equal" if self.kind == "less" else "less")
+                             kind="greater" if self.kind == "less_equal" else "less_equal")
+
+    def __str__(self):
+        return "X[%d] %s %.3f" % (self.feature_idx, ">" if self.kind == "greater" else "<=", self.threshold)

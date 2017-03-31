@@ -124,13 +124,13 @@ find_max(PyObject *self, PyObject *args){
         feature_weights_data = (double*)PyArray_DATA(PyArray_GETCONTIGUOUS(feature_weights));
     }
     else{
-        feature_weights_data = new double[X_dim0];
+        feature_weights_data = new double[X_dim1];
         for(int i = 0; i < X_dim1; i++){
             feature_weights_data[i] = 1;
         }
     }
 
-    BestUtility best_solution(X_dim1 * X_dim0);
+    BestUtility best_solution(100);
     int status = find_max(p, X_data, y_data, X_argsort_by_feature_data, example_idx_data, feature_weights_data,
                           example_idx_dim0, X_dim0, X_dim1, best_solution);
 
