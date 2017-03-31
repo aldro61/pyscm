@@ -18,12 +18,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import numpy as np
 from math import ceil
-#TODO MAKE THESE IMPORTS RELATIVE
+
+import numpy as np
+from pyscm.deprecated.utils import _unpack_binary_bytes_from_ints
+
 from .base import BaseAttributeClassifications
 from .popcount import inplace_popcount_32, inplace_popcount_64
-from ...utils import _unpack_binary_bytes_from_ints
 
 
 def _column_sum_dtype(array):

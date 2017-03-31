@@ -19,10 +19,10 @@
 """
 
 import numpy as np
+from pyscm.deprecated.utils import _pack_binary_bytes_to_ints
 
 from .base import BaseBinaryAttributeList
 from .classifications.ndarray import NumpyPackedAttributeClassifications
-from ..utils import _pack_binary_bytes_to_ints
 
 class DefaultBinaryAttributeList(BaseBinaryAttributeList):
     """

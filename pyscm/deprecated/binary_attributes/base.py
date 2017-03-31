@@ -18,9 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import numpy as np
-
-from ..utils import _class_to_string
+from pyscm.deprecated.utils import _class_to_string
 
 class BaseMetaBinaryAttribute(object):
     """
