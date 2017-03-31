@@ -20,6 +20,7 @@ import logging
 import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from ._scm_utility import find_max as find_max_utility  # cpp extensions
@@ -142,6 +143,11 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
         return self.classes_[self.model_.predict(X)]
+
+    def score(self, X, y):
+        check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
+        X, y = check_X_y(X, y)
+        return accuracy_score(y_true=y, y_pred=self.predict(X))
 
     def _append_conjunction_model(self, new_rule):
         self.model_.add(new_rule)
