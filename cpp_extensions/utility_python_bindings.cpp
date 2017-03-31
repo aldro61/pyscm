@@ -1,8 +1,11 @@
 #include <Python.h>
 #include <numpy/arrayobject.h>
+
+#include <vector>
 #include <iostream>
 
-#include "utility.h"
+#include "best_utility.h"
+#include "solver.h"
 
 
 /***********************************************************************************************************************
@@ -10,11 +13,13 @@
  **********************************************************************************************************************/
 static PyObject *
 find_max(PyObject *self, PyObject *args){
+    double p;
     PyArrayObject *X, *y, *X_argsort_by_feature, *example_idx; //borrowed
     PyArrayObject *feature_weights = NULL;
 
     // Extract the argument values
-    if(!PyArg_ParseTuple(args, "O!O!O!O!|O!",
+    if(!PyArg_ParseTuple(args, "dO!O!O!O!|O!",
+                         &p,
                          &PyArray_Type, &X,
                          &PyArray_Type, &y,
                          &PyArray_Type, &X_argsort_by_feature,
@@ -22,7 +27,6 @@ find_max(PyObject *self, PyObject *args){
                          &PyArray_Type, &feature_weights)){
         return NULL;
     }
-    std::cout << "FEATURE WEIGHTS: " << (feature_weights ? "yup" : "nope") << std::endl;
 
     // Check the type of the numpy arrays
     if(PyArray_TYPE(X) != PyArray_DOUBLE){
@@ -101,11 +105,6 @@ find_max(PyObject *self, PyObject *args){
                         "X and X_argsort_by_feature must have the same number of columns");
         return NULL;
     }
-    if(y_dim0 != example_idx_dim0){
-        PyErr_SetString(PyExc_TypeError,
-                        "X and example_idx must have the same shape");
-        return NULL;
-    }
     if(feature_weights && feature_weights_dim0 != X_dim1){
         PyErr_SetString(PyExc_TypeError,
                         "feature_weights must have shape X.shape[1]");
@@ -120,12 +119,54 @@ find_max(PyObject *self, PyObject *args){
     X_argsort_by_feature_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(X_argsort_by_feature));
     example_idx_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(example_idx));
 
-    if(feature_weights)
-        std::cout << "It works with features!" << std::endl;
-    else
-        std::cout << "It works!" << std::endl;
+    double *feature_weights_data;
+    if(feature_weights){
+        feature_weights_data = (double*)PyArray_DATA(PyArray_GETCONTIGUOUS(feature_weights));
+    }
+    else{
+        feature_weights_data = new double[X_dim0];
+        for(int i = 0; i < X_dim1; i++){
+            feature_weights_data[i] = 1;
+        }
+    }
 
-    return Py_BuildValue("");
+    BestUtility best_solution(X_dim1 * X_dim0);
+    int status = find_max(p, X_data, y_data, X_argsort_by_feature_data, example_idx_data, feature_weights_data,
+                          example_idx_dim0, X_dim0, X_dim1, best_solution);
+
+    if(status != 0){
+        PyErr_SetString(PyExc_TypeError,
+                        "An error occurred in the solver");
+        return NULL;
+    }
+
+    // Prepare variables for return
+
+    double opti_utility = best_solution.best_utility;
+
+    npy_intp dims[] = {best_solution.best_n_equiv};
+    PyObject *opti_feat_idx = PyArray_SimpleNew(1, dims, PyArray_LONG);
+    long *opti_feat_idx_data = (long*)PyArray_DATA(opti_feat_idx);
+
+    PyObject *opti_thresholds = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+    double *opti_thresholds_data = (double*)PyArray_DATA(opti_thresholds);
+
+    PyObject *opti_kinds = PyArray_SimpleNew(1, dims, PyArray_LONG);
+    long *opti_kinds_data = (long*)PyArray_DATA(opti_kinds);
+
+    for(int i = 0; i < best_solution.best_n_equiv; i++){
+        opti_feat_idx_data[i] = best_solution.best_feat_idx[i];
+        opti_thresholds_data[i] = best_solution.best_feat_threshold[i];
+        opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
+    }
+
+
+
+    return Py_BuildValue("d,N,N,N",
+                         opti_utility,
+                         opti_feat_idx,
+                         opti_thresholds,
+                         opti_kinds);
 }
 
 

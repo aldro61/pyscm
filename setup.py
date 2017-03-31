@@ -42,7 +42,7 @@ class build_ext(_build_ext):
 solver_module = Extension('pyscm._scm_utility',
                           language="c++",
                           sources=['cpp_extensions/utility_python_bindings.cpp',
-                                   'cpp_extensions/utility.cpp'],
+                                   'cpp_extensions/solver.cpp'],
                           extra_compile_args=["-std=c++0x"] + os_compile_flags)
 
 popcount_module = Extension("pyscm.deprecated.binary_attributes.classifications.popcount",

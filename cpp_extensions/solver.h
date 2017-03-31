@@ -19,4 +19,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CPP_EXTENSIONS_UTILITY_H
 #define CPP_EXTENSIONS_UTILITY_H
 
+#include <vector>
+
+#include "best_utility.h"
+
+int find_max(double p,
+             double *X,
+             long *y,
+             long *Xas,
+             long *example_idx,
+             double *feature_weights,
+             int n_examples_included, // examples that we are allowed to look at
+             int n_examples,
+             int n_features,
+             BestUtility &out_best_solution);
+
+
 #endif //CPP_EXTENSIONS_UTILITY_H
