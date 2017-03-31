@@ -14,24 +14,28 @@ from time import time
 
 np.random.seed(42)
 
-n_features = range(1000, 10000, 1000)
-times = []
-for nf in n_features:
-    X, y = make_classification(n_samples=1000, n_features=nf, n_classes=2)
+n_examples = 1000
+n_features = 100000
 
+times = []
+nfs = []
+for p in np.linspace(0.01, 1.0, 10):
+    nf = int(p * n_features)
+    X, y = make_classification(n_samples=n_examples, n_features=nf, n_classes=2, random_state=np.random.RandomState(42))
     clf = SetCoveringMachineClassifier(model_type="conjunction", p=1.0, max_rules=100)
     t = time()
     clf.fit(X, y)
     took = time() - t
     times.append(took)
+    nfs.append(nf)
+    print nf
     print took
-    print accuracy_score(y_true=y, y_pred=clf.predict(X))
-    print clf.model_
+    print
 
 plt.clf()
-plt.plot(n_features, times)
+plt.plot(nfs, times)
 plt.legend()
 plt.xlabel("n features")
 plt.ylabel("time (seconds)")
-plt.title("Training time for 1000 examples")
+plt.title("Training time for 1000 examples (max rules 100)")
 plt.show()
