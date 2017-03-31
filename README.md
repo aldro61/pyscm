@@ -16,3 +16,6 @@ python setup.py install
 ```
 python setup.py test
 ```
+
+## Contributors
+ * Alexandre Drouin (package maintainer)
