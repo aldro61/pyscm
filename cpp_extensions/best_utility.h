@@ -11,15 +11,16 @@
 
 class BestUtility{
 private:
-    int mem_size = 0;
+    int mem_size;
 public:
-    double best_utility = -INFINITY;
+    double best_utility;
     long *best_feat_idx;
     double *best_feat_threshold;
     uint8_t *best_feat_kind;
-    int best_n_equiv = 0;
+    int best_n_equiv;
 
     BestUtility(int const &memory_size){
+        this->best_utility = - INFINITY;
         this->best_n_equiv = 0;
         this->resize(memory_size);
     }
