@@ -1,23 +1,23 @@
 language: python
-  python:
-    - 2.7
+python:
+  - 2.7
 
-  addons:
-    apt:
-      packages:
-        - libblas-dev
-        - liblapack-dev
-        - gfortran
+addons:
+  apt:
+    packages:
+      - libblas-dev
+      - liblapack-dev
+      - gfortran
 
-  install:
-    - pip install -U pip pip-tools
-    - pip-compile
-    - pip install -r numpy scipy scikit-learn
+install:
+  - pip install -U pip pip-tools
+  - pip-compile
+  - pip install -r numpy scipy scikit-learn
 
-  script:
-    - python setup.py test
+script:
+  - python setup.py test
 
-  notifications:
-    email:
-      on_success: change
-      on_failure: change
+notifications:
+  email:
+    on_success: change
+    on_failure: change
