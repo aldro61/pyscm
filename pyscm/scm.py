@@ -43,7 +43,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
-        self.random_state = random_state if random_state is not None else np.random.RandomState(42)
+        self.random_state = np.random.RandomState(random_state) if random_state is not None \
+            else np.random.RandomState(42)
 
     def get_params(self, deep=True):
         return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
