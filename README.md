@@ -19,3 +19,4 @@ python setup.py test
 
 ## Contributors
  * Alexandre Drouin (package maintainer)
+ * Pier-Luc Plante
