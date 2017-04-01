@@ -18,5 +18,5 @@ python setup.py test
 ```
 
 ## Contributors
- * Alexandre Drouin (package maintainer)
- * Pier-Luc Plante
+ * [Alexandre Drouin](https://github.com/aldro61) (package maintainer)
+ * [Pier-Luc Plante](https://github.com/plpla)
