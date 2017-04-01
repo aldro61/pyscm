@@ -176,4 +176,4 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
 class SetCoveringMachineClassifier(BaseSetCoveringMachine):
     def _get_best_utility_rules(self, X, y, X_argsort_by_feature, example_idx):
-        return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx, np.ones(X.shape[1]))
+        return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx)

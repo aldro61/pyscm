@@ -86,7 +86,11 @@ find_max(PyObject *self, PyObject *args){
     npy_intp X_argsort_by_feature_dim0 = PyArray_DIM(X_argsort_by_feature, 0);
     npy_intp X_argsort_by_feature_dim1 = PyArray_DIM(X_argsort_by_feature, 1);
     npy_intp example_idx_dim0 = PyArray_DIM(example_idx, 0);
-    npy_intp feature_weights_dim0 = PyArray_DIM(feature_weights, 0);
+    npy_intp feature_weights_dim0 = 0;
+    if(feature_weights){
+        feature_weights_dim0 = PyArray_DIM(feature_weights, 0);
+    }
+
     if(X_dim0 != y_dim0){
         PyErr_SetString(PyExc_TypeError,
                         "X and y must have the same number of rows");
