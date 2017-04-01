@@ -60,9 +60,9 @@ def increase_n_examples():
     plt.clf()
     plt.plot(n_exs, times)
     plt.legend()
-    plt.xlabel("n features")
+    plt.xlabel("n examples")
     plt.ylabel("time (seconds)")
-    plt.title("Training time for 1000 examples (max rules 100)")
+    plt.title("Training time for 1000 <= n <= 100000 examples (1000 features)")
     plt.show()
 
 if __name__ == '__main__':
