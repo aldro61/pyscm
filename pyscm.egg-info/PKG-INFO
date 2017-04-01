@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: pyscm
+Version: 0.0.1
+Summary: The Set Covering Machine algorithm
+Home-page: https://github.com/aldro61/pyscm
+Author: Alexandre Drouin
+Author-email: aldro61@gmail.com
+License: GPL-3
+Description: A fast implementation of the Set Covering Machine algorithm using a dynamic programming algorithm to select the rules of greatest utility.
+Keywords: machine learning binary classification set covering machine rules
+Platform: UNKNOWN
