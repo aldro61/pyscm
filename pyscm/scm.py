@@ -43,8 +43,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
-        self.random_state = np.random.RandomState(random_state) if random_state is not None \
-            else np.random.RandomState(42)
+        self.random_state = random_state if isinstance(random_state, np.random.RandomState) \
+            else (np.random.RandomState(random_state if random_state is not None else 42))
 
     def get_params(self, deep=True):
         return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
@@ -178,3 +178,62 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 class SetCoveringMachineClassifier(BaseSetCoveringMachine):
     def _get_best_utility_rules(self, X, y, X_argsort_by_feature, example_idx):
         return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx, np.ones(X.shape[1]))
+
+def log_lambda(x, ld):
+    return (np.log(1 + x) / float(np.log(ld))) + 1
+
+def tanh_lambda(x, ld):
+    return np.tanh(ld * x) + 1
+
+def arctan_lambda(x, ld):
+    return ((2 / float(np.pi)) * np.arctan((2 / float(np.pi)) * x * ld)) + 1
+
+def abs_lambda(x, ld):
+    return (x * ld / float(1 + np.abs(x * ld))) + 1
+
+class GroupSetCoveringMachineClassifier(BaseSetCoveringMachine):
+    # Pour resoudre ca, il va falloir utiliser le utility_function_additional_args car best_utility prends juste 4
+    # arguments obligatoires et le reste est lu dans ce dictionnaire.
+    # Testons d'abord pour passer un np.ones tranquile pour commencer.
+    # def fit(self, X, y, features_weights, iteration_callback=None):
+
+    def fit(self, X, y, groups_ids, iteration_callback=None):
+        features_weights = np.ones(X.shape[1])
+        groups_ids = np.asarray(groups_ids)
+        assert groups_ids.shape[0] == X.shape[1], 'Each features must have a group number'
+
+        # clean version, but keep working with the debug when i get back to it
+        # def call_back_function(model):
+        #     choosen_rules = model.rules
+        #     choosen_rules_idx = [el.feature_idx for el in choosen_rules]
+        #     choosen_rules_groups_ids = groups_ids[choosen_rules_idx]
+        #     for ids in choosen_rules_groups_ids:
+        #         features_weights[groups_ids == ids] += 1
+
+        # TODO: Voir comment je peux proceder sans duplication d'attributs! Car si je duplique va falloir changer la
+        # creation de stump obligatoirement. Donc impacter sur la structure du fit; Ca peut eventuellement se controler
+        # avec mon attribut groups ids. Vu qu'on est en mode inline maintenant plus besoin de stocker tout le vecteur
+        # j'ai juste besoin de la rle choisie (attribut) puis je vais incrementer le poids de toutes les regles
+        # appartenant aux groupes de la regle si la regle est dans plusieurs groups sinon juste le groupe unique.
+        # Donc tout doit etre controler dans mon parametre groups_ids. Sa forme influencant tout
+        def call_back_function(model):
+            choosen_rules = model.rules
+            choosen_rules_idx = [el.feature_idx for el in choosen_rules]
+            # c'est ici je dois travailler avec le choosen_rules_idx 
+            print 'the model is', model
+            print 'the indexes are', choosen_rules_idx
+            choosen_rules_groups_ids = groups_ids[choosen_rules_idx]
+            print choosen_rules_groups_ids
+            for ids in choosen_rules_groups_ids:
+                print 'we r here', ids
+                features_weights[groups_ids == ids] += 1
+                print 'update feature weights in the loop', features_weights
+            print 'update feature weights outside the loop', features_weights
+
+        super(GroupSetCoveringMachineClassifier, self).fit(y=y, X=X, iteration_callback=call_back_function,
+                                                utility__features_weights=features_weights)
+
+    def _get_best_utility_rules(self, X, y, X_argsort_by_feature, example_idx, features_weights):
+        print features_weights
+        print type(features_weights)
+        return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx, features_weights)

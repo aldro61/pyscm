@@ -17,4 +17,3 @@
 
 """
 from .scm import SetCoveringMachineClassifier
-# GroupSetCoveringMachineClassifier
