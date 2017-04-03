@@ -1,3 +1,5 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
+from sklearn.externals.six import iteritems
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2017 Alexandre Drouin
@@ -50,7 +52,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
                 "random_state": self.random_state}
 
     def set_params(self, **parameters):
-        for parameter, value in parameters.items():
+        for parameter, value in iteritems(parameters):
             self.setattr(parameter, value)
         return self
 
@@ -66,7 +68,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         logging.debug("Parsing additional fit parameters")
         utility_function_additional_args = {}
         if fit_params is not None:
-            for key, value in fit_params.iteritems():
+            for key, value in iteritems(fit_params):
                 if key[:9] == "utility__":
                     utility_function_additional_args[key[9:]] = value
 
