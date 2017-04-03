@@ -21,8 +21,7 @@ import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.validation import check_random_state
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted,  check_random_state
 
 from ._scm_utility import find_max as find_max_utility  # cpp extensions
 from .model import ConjunctionModel, DisjunctionModel
