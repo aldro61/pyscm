@@ -21,7 +21,7 @@ import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted,  check_random_state
 
 from ._scm_utility import find_max as find_max_utility  # cpp extensions
 from .model import ConjunctionModel, DisjunctionModel
@@ -43,7 +43,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
-        self.random_state = random_state if random_state is not None else np.random.RandomState(42)
+        self.random_state = check_random_state(random_state)
 
     def get_params(self, deep=True):
         return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
@@ -51,7 +51,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
     def set_params(self, **parameters):
         for parameter, value in parameters.items():
-            self.setattr(parameter, value)
+            setattr(self, parameter, value)
         return self
 
     def fit(self, X, y, iteration_callback=None, **fit_params):
