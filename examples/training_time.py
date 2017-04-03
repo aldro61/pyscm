@@ -2,6 +2,7 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+
 from pyscm.scm import SetCoveringMachineClassifier
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
