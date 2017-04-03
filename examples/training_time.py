@@ -35,7 +35,7 @@ def increase_n_features():
     plt.legend()
     plt.xlabel("n features")
     plt.ylabel("time (seconds)")
-    plt.title("Training time for 1000 examples (max rules 100)")
+    plt.title("Training time for 1000 <= n <= 100000 features (1000 examples)")
     plt.show()
 
 def increase_n_examples():
