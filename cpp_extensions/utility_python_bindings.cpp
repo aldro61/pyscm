@@ -7,7 +7,6 @@
 #include "best_utility.h"
 #include "solver.h"
 
-
 static PyObject *
 find_max(PyObject *self, PyObject *args){
     double p;
@@ -180,9 +179,28 @@ static PyMethodDef Methods[] = {
         {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+
+static struct PyModuleDef _scm_utility_module = {
+    PyModuleDef_HEAD_INIT,
+    "_scm_utility",
+    NULL,
+    -1,
+    Methods
+};
+
+PyMODINIT_FUNC PyInit__scm_utility() {
+    import_array();
+    return PyModule_Create(&_scm_utility_module);
+};
+
+#else
+
 PyMODINIT_FUNC
 init_scm_utility
         (void){
     (void)Py_InitModule("_scm_utility", Methods);
     import_array();//necessary from numpy otherwise we crash with segfault
 }
+
+#endif

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function, division, absolute_import, unicode_literals
+from sklearn.externals.six import iteritems
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2014 Alexandre Drouin
@@ -54,7 +56,7 @@ def _class_to_string(instance):
     Private attributes must be marked with a leading underscore.
     """
     return instance.__class__.__name__ + "(" + ",".join(
-        [str(k) + "=" + str(v) for k, v in instance.__dict__.iteritems() if str(k[0]) != "_"]) + ")"
+        [str(k) + "=" + str(v) for k, v in itetitems(instance.__dict__) if str(k[0]) != "_"]) + ")"
 
 def _conditional_print(text, condition):
     """
@@ -69,7 +71,7 @@ def _conditional_print(text, condition):
         Print or do not print
     """
     if condition:
-        print text
+        print(text)
 
 def _split_into_contiguous(a_list):
     """
