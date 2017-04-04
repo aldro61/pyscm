@@ -1,5 +1,5 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
-from sklearn.externals.six import iteritems
+from six import iteritems
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2017 Alexandre Drouin

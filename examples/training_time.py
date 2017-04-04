@@ -1,3 +1,4 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,9 +29,9 @@ for p in np.linspace(0.01, 1.0, 10):
     took = time() - t
     times.append(took)
     nfs.append(nf)
-    print nf
-    print took
-    print
+    print(nf)
+    print(took)
+    print()
 
 plt.clf()
 plt.plot(nfs, times)

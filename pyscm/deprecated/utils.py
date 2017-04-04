@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import, unicode_literals
-from sklearn.externals.six import iteritems
+from six import iteritems
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2014 Alexandre Drouin
