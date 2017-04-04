@@ -1,4 +1,3 @@
-from __future__ import print_function, division, absolute_import, unicode_literals
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2017 Alexandre Drouin
@@ -17,8 +16,7 @@ from __future__ import print_function, division, absolute_import, unicode_litera
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import numpy as np
-
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 from .utils import _class_to_string
 

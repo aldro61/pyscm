@@ -1,5 +1,3 @@
-from __future__ import print_function, division, absolute_import, unicode_literals
-from six import iteritems
 """
     pyscm -- The Set Covering Machine in Python
     Copyright (C) 2017 Alexandre Drouin
@@ -18,6 +16,9 @@ from six import iteritems
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
+
+from six import iteritems
 
 
 def _class_to_string(instance):
