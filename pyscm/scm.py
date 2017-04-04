@@ -46,7 +46,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
-        self.random_state = check_random_state(random_state)
+        self.random_state = random_state
 
     def get_params(self, deep=True):
         return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
@@ -110,7 +110,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
             # TODO: Support user specified tiebreaker
             logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
-            keep_idx = self.random_state.randint(0, len(opti_feat_idx))
+            random_state = check_random_state(self.random_state)
+            keep_idx = random_state.randint(0, len(opti_feat_idx))
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
                                   kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
 
