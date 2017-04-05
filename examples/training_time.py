@@ -1,3 +1,5 @@
+from __future__ import print_function, division, absolute_import, unicode_literals
+
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
@@ -5,7 +7,6 @@ import seaborn as sns
 
 from pyscm.scm import SetCoveringMachineClassifier
 from sklearn.datasets import make_classification
-from sklearn.metrics import accuracy_score
 from time import time
 
 
@@ -14,6 +15,7 @@ def increase_n_features():
     n_bench_points = 5
     n_examples = 1000
     n_features = 100000
+    
     avg_times = np.zeros(n_bench_points)
     nfs = [int(n_features * p) for p in np.linspace(0.01, 1.0, n_bench_points)]
     for _ in range(n_repeats):
@@ -41,6 +43,7 @@ def increase_n_examples():
     n_bench_points = 5
     n_examples = 10000
     n_features = 1000
+    
     avg_times = np.zeros(n_bench_points)
     n_exs = [int(n_examples * p) for p in np.linspace(0.01, 1.0, n_bench_points)]
     for _ in range(n_repeats):
@@ -68,4 +71,3 @@ if __name__ == '__main__':
                         format="%(asctime)s.%(msecs)d %(levelname)s %(module)s - %(funcName)s: %(message)s")
     increase_n_examples()
     increase_n_features()
-

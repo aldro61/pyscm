@@ -18,7 +18,6 @@
 """
 from numpy import get_include as get_numpy_include
 from platform import system as get_os_name
-
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
 
@@ -57,8 +56,8 @@ setup(
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
-    setup_requires=["numpy", "scipy", "scikit-learn"],
-    install_requires=["numpy", "scipy", "scikit-learn"],
+    setup_requires=["numpy", "scipy", "scikit-learn", "six"],
+    install_requires=["numpy", "scipy", "scikit-learn", "six"],
 
     author="Alexandre Drouin",
     author_email="aldro61@gmail.com",

@@ -16,6 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+from __future__ import print_function, division, absolute_import, unicode_literals
+
+from six import iteritems
 
 
 def _class_to_string(instance):
@@ -37,4 +40,4 @@ def _class_to_string(instance):
     Private attributes must be marked with a leading underscore.
     """
     return instance.__class__.__name__ + "(" + ",".join(
-        [str(k) + "=" + str(v) for k, v in instance.__dict__.iteritems() if str(k[0]) != "_"]) + ")"
+        [str(k) + "=" + str(v) for k, v in iteritems(instance.__dict__) if str(k[0]) != "_"]) + ")"
