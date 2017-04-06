@@ -24,6 +24,12 @@ public:
         this->best_n_equiv = 0;
         this->resize(memory_size);
     }
+    
+    ~BestUtility(){
+        delete [] this->best_feat_idx;
+        delete [] this->best_feat_threshold;
+        delete [] this->best_feat_kind;
+    }
 
     inline void add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind);
     inline void clear();
