@@ -160,6 +160,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         --------
         predictions: numpy_array, shape=[n_examples]
             The predicted class for each example.
+
         """
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
@@ -178,6 +179,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         --------
         p : array of shape = [n_examples, 2]
             The class probabilities for each example. Classes are ordered by lexicographic order.
+
         """
         warn("SetCoveringMachines do not support probabilistic predictions. The returned values will be zero or one.",
              RuntimeWarning)
@@ -188,6 +190,22 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         return np.hstack((neg_proba.reshape(-1, 1), pos_proba.reshape(-1, 1)))
 
     def score(self, X, y):
+        """
+        Predict classes of examples and measure accuracy
+
+        Parameters:
+        -----------
+        X: array-like, shape=(n_examples, n_features)
+            The feature of the input examples.
+        y : array-like, shape = [n_samples]
+            The labels of the input examples.
+
+        Returns:
+        --------
+        accuracy: float
+            The proportion of correctly classified examples.
+
+        """
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X, y = check_X_y(X, y)
         return accuracy_score(y_true=y, y_pred=self.predict(X))
