@@ -122,7 +122,6 @@ class UtilityTests(TestCase):
         for n_decimals in range(3):
 
             # The more examples, the more likely we are to have equal feature values
-
             for n_examples in [10, 100, 1000]:
 
                 # Do this a few times for each configuration
