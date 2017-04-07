@@ -118,7 +118,7 @@ class UtilityTests(TestCase):
         """
         n_tests = 1000
 
-        # Using rounding generates cases with equal feature values for examlpes
+        # Using rounding generates cases with equal feature values for examples
         for n_decimals in range(3):
 
             # The more examples, the more likely we are to have equal feature values
