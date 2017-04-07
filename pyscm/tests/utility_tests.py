@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import, unicode_literals
 
 import numpy as np
 import sys
@@ -111,3 +111,45 @@ class UtilityTests(TestCase):
         best_utility, best_feat_idx, \
         best_thresholds, best_kinds = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
+
+    def automatic_testing(self):
+        """
+        Random testing
+        """
+        n_tests = 1000
+
+        # Using rounding generates cases with equal feature values for examples
+        for n_decimals in range(3):
+
+            # The more examples, the more likely we are to have equal feature values
+            for n_examples in [10, 100, 1000]:
+
+                # Do this a few times for each configuration
+                for _ in range(n_tests):
+                    p = max(0, np.random.rand() * 100.)
+                    x = (np.random.rand(n_examples) * 5.).round(n_decimals).reshape(-1, 1).copy()
+                    xas = np.argsort(x, axis=0)
+                    y = np.random.randint(0, 2, n_examples)
+                    thresholds = np.unique(x)
+
+                    # Use the solver to find the solution
+                    solver_best_utility, solver_best_feat_idx, solver_best_thresholds, solver_best_kinds = \
+                        find_max(p, x, y, xas, np.arange(n_examples))
+
+                    # Less equal rule utilities
+                    le_rule_utilities = []
+                    for t in thresholds:
+                        rule_classifications = (x <= t).reshape(-1,)
+                        N = (~rule_classifications[y == 0]).sum()
+                        P_bar = (~rule_classifications[y == 1]).sum()
+                        le_rule_utilities.append(N - p * P_bar)
+
+                    # Greater rule utilities
+                    g_rule_utilities = []
+                    for t in thresholds:
+                        rule_classifications = (x > t).reshape(-1,)
+                        N = 1.0 * (~rule_classifications[y == 0]).sum()
+                        P_bar = 1.0 * (~rule_classifications[y == 1]).sum()
+                        g_rule_utilities.append(N - p * P_bar)
+
+                    np.testing.assert_almost_equal(actual=solver_best_utility, desired=max(max(le_rule_utilities), max(g_rule_utilities)))
