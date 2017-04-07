@@ -119,7 +119,7 @@ class UtilityTests(TestCase):
         n_tests = 10000
         n_examples = 10
         n_decimals = 2
-        for _ in xrange(n_tests):
+        for _ in range(n_tests):
             p = np.random.rand() * 100.
             x = (np.random.rand(n_examples) * 5.).round(n_decimals).reshape(-1, 1).copy()
             xas = np.argsort(x, axis=0)
