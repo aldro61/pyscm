@@ -116,34 +116,41 @@ class UtilityTests(TestCase):
         """
         Random testing
         """
-        n_tests = 10000
-        n_examples = 10
-        n_decimals = 2
-        for _ in range(n_tests):
-            p = np.random.rand() * 100.
-            x = (np.random.rand(n_examples) * 5.).round(n_decimals).reshape(-1, 1).copy()
-            xas = np.argsort(x, axis=0)
-            y = np.random.randint(0, 2, n_examples)
-            thresholds = np.unique(x)
+        n_tests = 1000
 
-            # Use the solver to find the solution
-            solver_best_utility, solver_best_feat_idx, solver_best_thresholds, solver_best_kinds = \
-                find_max(p, x, y, xas, np.arange(n_examples))
+        # Using rounding generates cases with equal feature values for examlpes
+        for n_decimals in range(3):
 
-            # Less equal rule utilities
-            le_rule_utilities = []
-            for t in thresholds:
-                rule_classifications = (x <= t).reshape(-1,)
-                N = (~rule_classifications[y == 0]).sum()
-                P_bar = (~rule_classifications[y == 1]).sum()
-                le_rule_utilities.append(N - p * P_bar)
+            # The more examples, the more likely we are to have equal feature values
 
-            # Greater rule utilities
-            g_rule_utilities = []
-            for t in thresholds:
-                rule_classifications = (x > t).reshape(-1,)
-                N = 1.0 * (~rule_classifications[y == 0]).sum()
-                P_bar = 1.0 * (~rule_classifications[y == 1]).sum()
-                g_rule_utilities.append(N - p * P_bar)
+            for n_examples in [10, 100, 1000]:
 
-            np.testing.assert_almost_equal(actual=solver_best_utility, desired=max(max(le_rule_utilities), max(g_rule_utilities)))
+                # Do this a few times for each configuration
+                for _ in range(n_tests):
+                    p = max(0, np.random.rand() * 100.)
+                    x = (np.random.rand(n_examples) * 5.).round(n_decimals).reshape(-1, 1).copy()
+                    xas = np.argsort(x, axis=0)
+                    y = np.random.randint(0, 2, n_examples)
+                    thresholds = np.unique(x)
+
+                    # Use the solver to find the solution
+                    solver_best_utility, solver_best_feat_idx, solver_best_thresholds, solver_best_kinds = \
+                        find_max(p, x, y, xas, np.arange(n_examples))
+
+                    # Less equal rule utilities
+                    le_rule_utilities = []
+                    for t in thresholds:
+                        rule_classifications = (x <= t).reshape(-1,)
+                        N = (~rule_classifications[y == 0]).sum()
+                        P_bar = (~rule_classifications[y == 1]).sum()
+                        le_rule_utilities.append(N - p * P_bar)
+
+                    # Greater rule utilities
+                    g_rule_utilities = []
+                    for t in thresholds:
+                        rule_classifications = (x > t).reshape(-1,)
+                        N = 1.0 * (~rule_classifications[y == 0]).sum()
+                        P_bar = 1.0 * (~rule_classifications[y == 1]).sum()
+                        g_rule_utilities.append(N - p * P_bar)
+
+                    np.testing.assert_almost_equal(actual=solver_best_utility, desired=max(max(le_rule_utilities), max(g_rule_utilities)))
