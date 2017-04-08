@@ -7,7 +7,7 @@ A fast implementation of the Set Covering Machine algorithm using a dynamic prog
 
 Marchand, M., & Taylor, J. S. (2003). The set covering machine. Journal of Machine Learning Research, 3, 723–746.
 
-![Alt text](https://github.com/aldro61/pyscm/examples/decision_boundary.png?raw=true)
+![Alt text](https://github.com/aldro61/pyscm/raw/master/examples/decision_boundary.png)
 
 ## Installation
 ``` 
