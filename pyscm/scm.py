@@ -68,6 +68,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             Returns self.
 
         """
+        random_state = check_random_state(self.random_state)
+
         if self.model_type == "conjunction":
             self._add_attribute_to_model = self._append_conjunction_model
             self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
@@ -126,7 +128,6 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
             # TODO: Support user specified tiebreaker
             logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
-            random_state = check_random_state(self.random_state)
             keep_idx = random_state.randint(0, len(opti_feat_idx))
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
                                   kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
