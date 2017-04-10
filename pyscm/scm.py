@@ -35,15 +35,6 @@ from .utils import _class_to_string
 
 class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
     def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
-        if model_type == "conjunction":
-            self._add_attribute_to_model = self._append_conjunction_model
-            self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
-        elif model_type == "disjunction":
-            self._add_attribute_to_model = self._append_disjunction_model
-            self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
-        else:
-            raise ValueError("Unsupported model type.")
-
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
@@ -77,6 +68,15 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             Returns self.
 
         """
+        if self.model_type == "conjunction":
+            self._add_attribute_to_model = self._append_conjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
+        elif self.model_type == "disjunction":
+            self._add_attribute_to_model = self._append_disjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
+        else:
+            raise ValueError("Unsupported model type.")
+
         # Initialize callbacks
         if iteration_callback is None:
             iteration_callback = lambda x: None
