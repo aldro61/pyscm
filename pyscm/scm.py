@@ -25,6 +25,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted,  check_random_state
+from warnings import warn
 
 from ._scm_utility import find_max as find_max_utility  # cpp extensions
 from .model import ConjunctionModel, DisjunctionModel
@@ -60,6 +61,21 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
     def fit(self, X, y, iteration_callback=None, **fit_params):
         """
         Fit a SCM model.
+
+        Parameters:
+        -----------
+        X: array-like, shape=[n_examples, n_features]
+            The feature of the input examples.
+        y : array-like, shape = [n_samples]
+            The labels of the input examples.
+        iteration_callback: function(model)
+            A function that is called each time a rule is added to the model.
+
+        Returns:
+        --------
+        self: object
+            Returns self.
+
         """
         # Initialize callbacks
         if iteration_callback is None:
@@ -130,25 +146,67 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
         self.rule_importances_ = []  # TODO: implement rule importances (like its done in Kover)
 
+        return self
+
     def predict(self, X):
         """
-        Compute binary predictions.
+        Predict class
 
         Parameters:
         -----------
-        X: numpy_array, shape=(n_examples,)
-            The feature vectors associated to some examples.
+        X: array-like, shape=[n_examples, n_features]
+            The feature of the input examples.
 
         Returns:
         --------
-        predictions: numpy_array, shape=(n_examples,)
+        predictions: numpy_array, shape=[n_examples]
             The predicted class for each example.
+
         """
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
         return self.classes_[self.model_.predict(X)]
 
+    def predict_proba(self, X):
+        """
+        Predict class probabilities
+
+        Parameters:
+        -----------
+        X: array-like, shape=(n_examples, n_features)
+            The feature of the input examples.
+
+        Returns:
+        --------
+        p : array of shape = [n_examples, 2]
+            The class probabilities for each example. Classes are ordered by lexicographic order.
+
+        """
+        warn("SetCoveringMachines do not support probabilistic predictions. The returned values will be zero or one.",
+             RuntimeWarning)
+        check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
+        X = check_array(X)
+        pos_proba = self.classes_[self.model_.predict(X)]
+        neg_proba = 1.0 - pos_proba
+        return np.hstack((neg_proba.reshape(-1, 1), pos_proba.reshape(-1, 1)))
+
     def score(self, X, y):
+        """
+        Predict classes of examples and measure accuracy
+
+        Parameters:
+        -----------
+        X: array-like, shape=(n_examples, n_features)
+            The feature of the input examples.
+        y : array-like, shape = [n_samples]
+            The labels of the input examples.
+
+        Returns:
+        --------
+        accuracy: float
+            The proportion of correctly classified examples.
+
+        """
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X, y = check_X_y(X, y)
         return accuracy_score(y_true=y, y_pred=self.predict(X))
@@ -179,5 +237,27 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
 
 class SetCoveringMachineClassifier(BaseSetCoveringMachine):
+    """
+    A Set Covering Machine classifier
+
+    [1]_ Marchand, M., & Shawe-Taylor, J. (2002). The set covering machine.
+    Journal of Machine Learning Research, 3(Dec), 723-746.
+
+    Parameters:
+    -----------
+    p: float
+        The trade-off parameter for the utility function (suggestion: use values >= 1).
+    model_type: str, default="conjunction"
+        The model type (conjunction or disjunction).
+    max_rules: int, default=10
+        The maximum number of rules in the model.
+    random_state: int, np.random.RandomState or None, default=None
+        The random state.
+
+    """
+    def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
+        super(SetCoveringMachineClassifier, self).__init__(p=p, model_type=model_type, max_rules=max_rules,
+                                                           random_state=random_state)
+
     def _get_best_utility_rules(self, X, y, X_argsort_by_feature, example_idx):
         return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx)
