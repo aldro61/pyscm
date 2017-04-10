@@ -255,7 +255,7 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
         The random state.
 
     """
-    def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
+    def __init__(self, p=1.0, model_type=str("conjunction"), max_rules=10, random_state=None):
         super(SetCoveringMachineClassifier, self).__init__(p=p, model_type=model_type, max_rules=max_rules,
                                                            random_state=random_state)
 
