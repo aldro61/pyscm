@@ -115,5 +115,6 @@ int find_max(double p,
         update_optimal_solution(out_best_solution, i, prev_threshold, N, P_bar, p, feature_weights[i],
                                 n_negative, n_positive);
     }
+    delete [] example_is_included;
     return 0;
 }
