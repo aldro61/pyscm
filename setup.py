@@ -50,14 +50,16 @@ popcount_module = Extension("pyscm.deprecated.binary_attributes.classifications.
                             extra_compile_args=["-march=native"])
 
 
+dependencies = ["numpy", "scipy", "scikit-learn", "six"]
+
 setup(
     name="pyscm",
     version="0.0.1",
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
-    setup_requires=["numpy", "scipy", "scikit-learn", "six"],
-    install_requires=["numpy", "scipy", "scikit-learn", "six"],
+    setup_requires=dependencies,
+    install_requires=dependencies,
 
     author="Alexandre Drouin",
     author_email="aldro61@gmail.com",
