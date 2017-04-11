@@ -94,6 +94,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         # Validate the input data
         logging.debug("Validating the input data")
         X, y = check_X_y(X, y)
+        X = np.asarray(X, dtype=np.double)
         self.classes_, y, total_n_ex_by_class = np.unique(y, return_inverse=True, return_counts=True)
         if len(self.classes_) != 2:
             raise ValueError("y must contain two unique classes.")
