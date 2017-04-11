@@ -160,6 +160,10 @@ find_max(PyObject *self, PyObject *args){
         opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
     }
 
+    Py_DECREF(X);
+    Py_DECREF(y);
+    Py_DECREF(X_argsort_by_feature);
+    Py_DECREF(example_idx);
 
 
     return Py_BuildValue("d,N,N,N",
