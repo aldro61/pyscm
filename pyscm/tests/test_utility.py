@@ -9,13 +9,10 @@ from sklearn.utils import estimator_checks
 
 from .._scm_utility import find_max
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-
-# TODO: Things that must be tested:
-# * Verify that the the solver handles equivalent feature values correctly
-# * Go crazy, try to break it!
 
 class UtilityTests(TestCase):
     def setUp(self):

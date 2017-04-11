@@ -1,9 +1,7 @@
 from __future__ import print_function, division, absolute_import, unicode_literals
 
-import numpy as np
 import sys
 
-from numpy import infty as inf
 from unittest import TestCase
 from sklearn.utils import estimator_checks
 
@@ -15,20 +13,6 @@ def eprint(*args, **kwargs):
 
 
 class SklearnCompatibilityTests(TestCase):
-    def setUp(self):
-        """
-        Called before each test
-
-        """
-        pass
-
-    def tearDown(self):
-        """
-        Called after each test
-
-        """
-        pass
-
     def test_sklearn_compatibility(self):
         """
         Test Sklearn compatibility
