@@ -35,19 +35,10 @@ from .utils import _class_to_string
 
 class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
     def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
-        if model_type == "conjunction":
-            self._add_attribute_to_model = self._append_conjunction_model
-            self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
-        elif model_type == "disjunction":
-            self._add_attribute_to_model = self._append_disjunction_model
-            self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
-        else:
-            raise ValueError("Unsupported model type.")
-
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
-        self.random_state = check_random_state(random_state)
+        self.random_state = random_state
 
     def get_params(self, deep=True):
         return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
@@ -77,6 +68,17 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             Returns self.
 
         """
+        random_state = check_random_state(self.random_state)
+
+        if self.model_type == "conjunction":
+            self._add_attribute_to_model = self._append_conjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_conjunction
+        elif self.model_type == "disjunction":
+            self._add_attribute_to_model = self._append_disjunction_model
+            self._get_example_idx_by_class = self._get_example_idx_by_class_disjunction
+        else:
+            raise ValueError("Unsupported model type.")
+
         # Initialize callbacks
         if iteration_callback is None:
             iteration_callback = lambda x: None
@@ -92,6 +94,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         # Validate the input data
         logging.debug("Validating the input data")
         X, y = check_X_y(X, y)
+        X = np.asarray(X, dtype=np.double)
         self.classes_, y, total_n_ex_by_class = np.unique(y, return_inverse=True, return_counts=True)
         if len(self.classes_) != 2:
             raise ValueError("y must contain two unique classes.")
@@ -126,7 +129,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
             # TODO: Support user specified tiebreaker
             logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
-            keep_idx = self.random_state.randint(0, len(opti_feat_idx))
+            keep_idx = random_state.randint(0, len(opti_feat_idx))
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
                                   kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
 
@@ -254,7 +257,7 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
         The random state.
 
     """
-    def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
+    def __init__(self, p=1.0, model_type=str("conjunction"), max_rules=10, random_state=None):
         super(SetCoveringMachineClassifier, self).__init__(p=p, model_type=model_type, max_rules=max_rules,
                                                            random_state=random_state)
 

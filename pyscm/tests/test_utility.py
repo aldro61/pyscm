@@ -5,6 +5,7 @@ import sys
 
 from numpy import infty as inf
 from unittest import TestCase
+from sklearn.utils import estimator_checks
 
 from .._scm_utility import find_max
 
@@ -12,10 +13,6 @@ from .._scm_utility import find_max
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-
-# TODO: Things that must be tested:
-# * Verify that the the solver handles equivalent feature values correctly
-# * Go crazy, try to break it!
 
 class UtilityTests(TestCase):
     def setUp(self):
@@ -112,11 +109,11 @@ class UtilityTests(TestCase):
         best_thresholds, best_kinds = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
 
-    def automatic_testing(self):
+    def test_random_data(self):
         """
         Random testing
         """
-        n_tests = 1000
+        n_tests = 10 #10000
 
         # Using rounding generates cases with equal feature values for examples
         for n_decimals in range(3):
@@ -152,4 +149,5 @@ class UtilityTests(TestCase):
                         P_bar = 1.0 * (~rule_classifications[y == 1]).sum()
                         g_rule_utilities.append(N - p * P_bar)
 
-                    np.testing.assert_almost_equal(actual=solver_best_utility, desired=max(max(le_rule_utilities), max(g_rule_utilities)))
+                    np.testing.assert_almost_equal(actual=solver_best_utility, desired=max(max(le_rule_utilities),
+                                                                                           max(g_rule_utilities)))
