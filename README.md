@@ -1,5 +1,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.org/aldro61/pyscm.svg?branch=master)](https://travis-ci.org/aldro61/pyscm)
+[![DOI](https://zenodo.org/badge/17353131.svg)](https://zenodo.org/badge/latestdoi/17353131)
 
 # pySCM
 
