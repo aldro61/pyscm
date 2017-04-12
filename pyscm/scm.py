@@ -98,8 +98,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.classes_, y, total_n_ex_by_class = np.unique(y, return_inverse=True, return_counts=True)
         if len(self.classes_) != 2:
             raise ValueError("y must contain two unique classes.")
-        logging.debug("The data contains %d examples. Negative class is %s (n: %d) and positive class is %s (n: %d)." %
-                      (len(y), self.classes_[0], total_n_ex_by_class[0], self.classes_[1], total_n_ex_by_class[1]))
+        logging.debug("The data contains {0:d} examples. Negative class is {1!s} (n: {2:d}) and positive class is {3!s} (n: {4:d}).".format(len(y), self.classes_[0], total_n_ex_by_class[0], self.classes_[1], total_n_ex_by_class[1]))
 
         # Invert the classes if we are learning a disjunction
         logging.debug("Preprocessing example labels")
@@ -128,18 +127,18 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
                                                      **utility_function_additional_args)
 
             # TODO: Support user specified tiebreaker
-            logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
+            logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
             keep_idx = random_state.randint(0, len(opti_feat_idx))
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
                                   kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
 
-            logging.debug("The best rule has utility %.3f" % opti_utility)
+            logging.debug("The best rule has utility {0:.3f}".format(opti_utility))
             self._add_attribute_to_model(stump)
 
             logging.debug("Discarding all examples that the rule classifies as negative")
             remaining_example_idx = remaining_example_idx[stump.classify(X[remaining_example_idx])]
             remaining_negative_example_idx = remaining_negative_example_idx[stump.classify(X[remaining_negative_example_idx])]
-            logging.debug("There are %d examples remaining (%d negatives)" % (len(remaining_example_idx),
+            logging.debug("There are {0:d} examples remaining ({1:d} negatives)".format(len(remaining_example_idx),
                                                                               len(remaining_negative_example_idx)))
 
             iteration_callback(self.model_)
