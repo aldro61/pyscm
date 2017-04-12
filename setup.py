@@ -54,7 +54,7 @@ dependencies = ["numpy", "scipy", "scikit-learn", "six"]
 
 setup(
     name="pyscm",
-    version="0.0.1",
+    version="0.0.3",
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
