@@ -120,4 +120,4 @@ class DecisionStump(BaseRule):
                              kind="greater" if self.kind == "less_equal" else "less_equal")
 
     def __str__(self):
-        return "X[%d] %s %.3f" % (self.feature_idx, ">" if self.kind == "greater" else "<=", self.threshold)
+        return "X[{0:d}] {1!s} {2:.3f}".format(self.feature_idx, ">" if self.kind == "greater" else "<=", self.threshold)

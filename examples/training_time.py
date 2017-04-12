@@ -34,7 +34,7 @@ def increase_n_features():
     plt.plot(nfs, avg_times)
     plt.xlabel("n features")
     plt.ylabel("time (seconds)")
-    plt.title("Training time for %d <= n <= %d features (%d examples)" % (min(nfs), max(nfs), n_examples))
+    plt.title("Training time for {0:d} <= n <= {1:d} features ({2:d} examples)".format(min(nfs), max(nfs), n_examples))
     plt.savefig("n_features.png", bbox_inches="tight")
 
 
@@ -62,7 +62,7 @@ def increase_n_examples():
     plt.plot(n_exs, avg_times)
     plt.xlabel("n examples")
     plt.ylabel("time (seconds)")
-    plt.title("Training time for %d <= n <= %d examples (%d features)" % (min(n_exs), max(n_exs), n_features))
+    plt.title("Training time for {0:d} <= n <= {1:d} examples ({2:d} features)".format(min(n_exs), max(n_exs), n_features))
     plt.savefig("n_examples.png", bbox_inches="tight")
 
 

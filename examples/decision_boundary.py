@@ -112,7 +112,7 @@ for ds_cnt, ds in enumerate(datasets):
         ax.set_yticks(())
         if ds_cnt == 0:
             ax.set_title(name)
-        ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'),
+        ax.text(xx.max() - .3, yy.min() + .3, ('{0:.2f}'.format(score)).lstrip('0'),
                 size=15, horizontalalignment='right')
         i += 1
 
