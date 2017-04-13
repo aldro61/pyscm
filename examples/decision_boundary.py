@@ -18,29 +18,29 @@ from sklearn.svm import SVC
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree._tree import TREE_LEAF
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 h = .02  # step size in the mesh
 
-names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-         "Naive Bayes", "QDA", "SCM-Conjunction", "SCM-Disjunction"]
+names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process", "Neural Net", "Naive Bayes", "QDA",
+         "Decision Tree", "Random Forest", "AdaBoost", "SCM-Conjunction", "SCM-Disjunction"]
 
 classifiers = [
     KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.025),
     SVC(gamma=2, C=1),
     GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
-    DecisionTreeClassifier(max_depth=5),
-    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
     MLPClassifier(alpha=1),
-    AdaBoostClassifier(),
     GaussianNB(),
     QuadraticDiscriminantAnalysis(),
-    SetCoveringMachineClassifier(max_rules=10, model_type="conjunction", p=2.0),
-    SetCoveringMachineClassifier(max_rules=10, model_type="disjunction", p=1.0)]
+    DecisionTreeClassifier(max_depth=5),
+    RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+    AdaBoostClassifier(),
+    SetCoveringMachineClassifier(max_rules=4, model_type="conjunction", p=2.0),
+    SetCoveringMachineClassifier(max_rules=4, model_type="disjunction", p=1.0)]
 
 X, y = make_classification(n_features=2, n_redundant=0, n_informative=2,
                            random_state=1, n_clusters_per_class=1)
@@ -70,6 +70,10 @@ for ds_cnt, ds in enumerate(datasets):
     # just plot the dataset first
     cm = plt.cm.RdBu
     cm_bright = ListedColormap(['#FF0000', '#0000FF'])
+    #cm = plt.cm.PiYG
+    #cm_bright = ListedColormap(['#FF0000', '#00FF00'])
+    #cm = plt.cm.bwr
+    #cm_bright = ListedColormap(['#0000FF', '#FF0000'])
     ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
     if ds_cnt == 0:
         ax.set_title("Input data")
@@ -88,6 +92,24 @@ for ds_cnt, ds in enumerate(datasets):
         ax = plt.subplot(len(datasets), len(classifiers) + 1, i)
         clf.fit(X_train, y_train)
         score = clf.score(X_test, y_test)
+
+        # Determine the number of rules used by each rule-based model
+        if name == "AdaBoost":
+            s = 0
+            for t in clf.estimators_:
+                s += (t.tree_.children_left != TREE_LEAF).sum()
+            n_rules = s
+        elif name == "Decision Tree":
+            n_rules = (clf.tree_.children_left != TREE_LEAF).sum()
+        elif name == "Random Forest":
+            s = 0
+            for t in clf.estimators_:
+                s += (t.tree_.children_left != TREE_LEAF).sum()
+            n_rules = s
+        elif "SCM" in name:
+            n_rules = len(clf.model_)
+        else:
+            n_rules = None
 
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
@@ -111,9 +133,11 @@ for ds_cnt, ds in enumerate(datasets):
         ax.set_xticks(())
         ax.set_yticks(())
         if ds_cnt == 0:
-            ax.set_title(name)
-        ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'),
-                size=15, horizontalalignment='right')
+            ax.set_title("{0!s}".format(name))
+        ax.text(xx.min() + 0.2, yy.min() + 0.2, 'Acc.: {0:.2f}'.format(score).lstrip('0'), size=15,
+                horizontalalignment='left', bbox=dict(facecolor='white', edgecolor='black', alpha=0.8))
+        ax.text(xx.min() + 0.2, yy.min() + 0.8, "Rules: {0!s}".format(n_rules) if n_rules is not None else "",
+                size=15, horizontalalignment='left', bbox=dict(facecolor='white', edgecolor='black', alpha=0.8))
         i += 1
 
 plt.tight_layout()
