@@ -44,17 +44,11 @@ solver_module = Extension('pyscm._scm_utility',
                                    'cpp_extensions/solver.cpp'],
                           extra_compile_args=["-std=c++0x"] + os_compile_flags)
 
-popcount_module = Extension("pyscm.deprecated.binary_attributes.classifications.popcount",
-                            ["pyscm/deprecated/binary_attributes/classifications/popcount.c"],
-                            include_dirs=[get_numpy_include()],
-                            extra_compile_args=["-march=native"])
-
-
 dependencies = ["numpy", "scipy", "scikit-learn", "six"]
 
 setup(
     name="pyscm",
-    version="0.0.3",
+    version="0.0.4",
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
@@ -72,7 +66,7 @@ setup(
     keywords="machine learning binary classification set covering machine rules",
     url="https://github.com/aldro61/pyscm",
 
-    ext_modules=[solver_module, popcount_module],
+    ext_modules=[solver_module],
 
     test_suite='nose.collector',
     tests_require=['nose']

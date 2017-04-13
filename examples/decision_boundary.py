@@ -133,7 +133,7 @@ for ds_cnt, ds in enumerate(datasets):
         ax.set_xticks(())
         ax.set_yticks(())
         if ds_cnt == 0:
-            ax.set_title("{0!s}".format(name))
+            ax.set_title(name.title())
         ax.text(xx.min() + 0.2, yy.min() + 0.2, 'Acc.: {0:.2f}'.format(score).lstrip('0'), size=15,
                 horizontalalignment='left', bbox=dict(facecolor='white', edgecolor='black', alpha=0.8))
         ax.text(xx.min() + 0.2, yy.min() + 0.8, "Rules: {0!s}".format(n_rules) if n_rules is not None else "",
