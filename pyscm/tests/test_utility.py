@@ -112,7 +112,8 @@ class UtilityTests(TestCase):
 
         # If example 3 is included, the best feature is feat1
         best_utility, best_feat_idx, \
-        best_thresholds, best_kinds = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
+        best_thresholds, best_kinds, \
+        best_N, best_P_bar = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
 
     def test_random_data(self):
