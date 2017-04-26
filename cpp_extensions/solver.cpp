@@ -30,19 +30,21 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
-        best_solution.add_equivalent(feature_idx, threshold, 0);
+        best_solution.add_equivalent(feature_idx, threshold, 0, N, P_bar);
     } else if(best_solution == utility_0){
-        best_solution.add_equivalent(feature_idx, threshold, 0);
+        best_solution.add_equivalent(feature_idx, threshold, 0, N, P_bar);
     }
 
     // Get utility for x <= t and check if optimal
     double utility_1 = (((double) n_negative - N) - p * ((double) n_positive - P_bar)) * feature_weight;
+    double temp_N = ((double) n_negative - N);
+    double temp_P_bar = ((double) n_positive - P_bar);
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
-        best_solution.add_equivalent(feature_idx, threshold, 1);
+        best_solution.add_equivalent(feature_idx, threshold, 1, temp_N, temp_P_bar);
     } else if(best_solution == utility_1){
-        best_solution.add_equivalent(feature_idx, threshold, 1);
+        best_solution.add_equivalent(feature_idx, threshold, 1, temp_N, temp_P_bar);
     }
 }
 

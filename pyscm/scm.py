@@ -123,12 +123,18 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             opti_utility, \
             opti_feat_idx, \
             opti_threshold, \
-            opti_kind = self._get_best_utility_rules(X, y, X_argsort_by_feature, remaining_example_idx.copy(),
-                                                     **utility_function_additional_args)
+            opti_kind, \
+            opti_N, \
+            opti_P_bar = self._get_best_utility_rules(X, y, X_argsort_by_feature, remaining_example_idx.copy(),
+                                                      **utility_function_additional_args)
 
             # TODO: Support user specified tiebreaker
-            logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
-            keep_idx = random_state.randint(0, len(opti_feat_idx))
+            logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
+            if len(opti_feat_idx) > 1:
+                trainig_risk_decrease = 1.0 * opti_N - opti_P_bar
+                keep_idx = np.where(trainig_risk_decrease == trainig_risk_decrease.max())[0][0]
+            else:
+                keep_idx = 0
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
                                   kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
 
