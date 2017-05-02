@@ -109,7 +109,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
         # Presort all the features
         logging.debug("Presorting all features")
-        X_argsort_by_feature = np.argsort(X, axis=0)
+        X_argsort_by_feature = np.argsort(X, axis=0).T.copy()
 
         # Create an empty model
         logging.debug("Initializing empty model")

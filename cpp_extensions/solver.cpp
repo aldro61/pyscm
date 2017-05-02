@@ -83,7 +83,7 @@ int find_max(double p,
         for(int j = 0; j < n_examples; j++){
 
             // Get the index of the next example according to the sorting
-            long idx = Xas[i + j * n_features];
+            long idx = Xas[i*n_examples + j];
 
             // Consider this example only if it is included in the calculations
             if(example_is_included[idx]){
