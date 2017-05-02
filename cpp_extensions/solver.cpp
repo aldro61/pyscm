@@ -59,9 +59,8 @@ int find_max(double p,
 
     // Make a mask that tells us which examples should be considered in the utility calculations
     bool *example_is_included = new bool[n_examples];
-    for(int i = 0; i < n_examples; i++){
-        example_is_included[i] = false;
-    }
+    memset(example_is_included, false, n_examples*sizeof(bool));
+    
     for(int i = 0; i < n_examples_included; i++){
         example_is_included[example_idx[i]] = true;
     }

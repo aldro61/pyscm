@@ -125,9 +125,7 @@ find_max(PyObject *self, PyObject *args){
     }
     else{
         feature_weights_data = new double[X_dim1];
-        for(int i = 0; i < X_dim1; i++){
-            feature_weights_data[i] = 1;
-        }
+        std::fill_n(feature_weights_data, X_dim1, 1);
     }
 
     BestUtility best_solution(100);
@@ -156,7 +154,11 @@ find_max(PyObject *self, PyObject *args){
 
     for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_feat_idx_data[i] = best_solution.best_feat_idx[i];
+    }
+    for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_thresholds_data[i] = best_solution.best_feat_threshold[i];
+    }
+    for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
     }
 
