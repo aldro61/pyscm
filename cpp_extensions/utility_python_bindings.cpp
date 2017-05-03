@@ -154,11 +154,7 @@ find_max(PyObject *self, PyObject *args){
 
     for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_feat_idx_data[i] = best_solution.best_feat_idx[i];
-    }
-    for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_thresholds_data[i] = best_solution.best_feat_threshold[i];
-    }
-    for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
     }
 
