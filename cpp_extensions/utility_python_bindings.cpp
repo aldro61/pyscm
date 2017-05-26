@@ -97,12 +97,12 @@ find_max(PyObject *self, PyObject *args){
     }
     if(X_dim0 != X_argsort_by_feature_dim1){
         PyErr_SetString(PyExc_TypeError,
-                        "X and X_argsort_by_feature must have the same number of examples");
+                        "X must have as many rows as X_argsort_by_feature has columns.");
         return NULL;
     }
     if(X_dim1 != X_argsort_by_feature_dim0){
         PyErr_SetString(PyExc_TypeError,
-                        "X and X_argsort_by_feature must have the same number of features");
+                        "X must have as many columns as X_argsort_by_feature has rows");
         return NULL;
     }
     if(feature_weights && feature_weights_dim0 != X_dim1){
