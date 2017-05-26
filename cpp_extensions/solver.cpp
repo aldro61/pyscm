@@ -23,10 +23,10 @@ void get_n_examples_by_class(const bool* example_is_included, const long* y, con
 }
 
 void update_optimal_solution(BestUtility &best_solution, int const &feature_idx, double const &threshold,
-                             double const &N, double const &P_bar, double const &p, double const &feature_weight,
+                             int const &N, int const &P_bar, double const &p, double const &feature_weight,
                              int const &n_negative, int const &n_positive){
     // Get utility for x > t and check if optimal
-    double utility_0 = (((double) N) - p * ((double) P_bar)) * feature_weight;
+    double utility_0 = ((N) - p * (P_bar)) * feature_weight;
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
@@ -36,15 +36,15 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
     }
 
     // Get utility for x <= t and check if optimal
-    double utility_1 = (((double) n_negative - N) - p * ((double) n_positive - P_bar)) * feature_weight;
-    double temp_N = ((double) n_negative - N);
-    double temp_P_bar = ((double) n_positive - P_bar);
+    int N_1 = n_negative - N;
+    int P_bar_1 = n_positive - P_bar;
+    double utility_1 = ((N_1) - p * (P_bar_1)) * feature_weight;
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
-        best_solution.add_equivalent(feature_idx, threshold, 1, temp_N, temp_P_bar);
+        best_solution.add_equivalent(feature_idx, threshold, 1, N_1, P_bar_1);
     } else if(best_solution == utility_1){
-        best_solution.add_equivalent(feature_idx, threshold, 1, temp_N, temp_P_bar);
+        best_solution.add_equivalent(feature_idx, threshold, 1, N_1, P_bar_1);
     }
 }
 
@@ -61,9 +61,8 @@ int find_max(double p,
 
     // Make a mask that tells us which examples should be considered in the utility calculations
     bool *example_is_included = new bool[n_examples];
-    for(int i = 0; i < n_examples; i++){
-        example_is_included[i] = false;
-    }
+    std::fill_n(example_is_included, n_examples, false);
+    
     for(int i = 0; i < n_examples_included; i++){
         example_is_included[example_idx[i]] = true;
     }
@@ -85,7 +84,7 @@ int find_max(double p,
         for(int j = 0; j < n_examples; j++){
 
             // Get the index of the next example according to the sorting
-            long idx = Xas[i + j * n_features];
+            long idx = Xas[i * n_examples + j];
 
             // Consider this example only if it is included in the calculations
             if(example_is_included[idx]){

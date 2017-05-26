@@ -109,7 +109,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
         # Presort all the features
         logging.debug("Presorting all features")
-        X_argsort_by_feature = np.argsort(X, axis=0)
+        X_argsort_by_feature_T = np.argsort(X, axis=0).T.copy()
 
         # Create an empty model
         logging.debug("Initializing empty model")
@@ -125,11 +125,11 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             opti_threshold, \
             opti_kind, \
             opti_N, \
-            opti_P_bar = self._get_best_utility_rules(X, y, X_argsort_by_feature, remaining_example_idx.copy(),
+            opti_P_bar = self._get_best_utility_rules(X, y, X_argsort_by_feature_T, remaining_example_idx.copy(),
                                                       **utility_function_additional_args)
 
             # TODO: Support user specified tiebreaker
-            logging.debug("Tiebreaking. Found %d optimal rules" % len(opti_feat_idx))
+            logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
             if len(opti_feat_idx) > 1:
                 trainig_risk_decrease = 1.0 * opti_N - opti_P_bar
                 keep_idx = np.where(trainig_risk_decrease == trainig_risk_decrease.max())[0][0]
@@ -266,5 +266,5 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
         super(SetCoveringMachineClassifier, self).__init__(p=p, model_type=model_type, max_rules=max_rules,
                                                            random_state=random_state)
 
-    def _get_best_utility_rules(self, X, y, X_argsort_by_feature, example_idx):
-        return find_max_utility(self.p, X, y, X_argsort_by_feature, example_idx)
+    def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, example_idx):
+        return find_max_utility(self.p, X, y, X_argsort_by_feature_T, example_idx)

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
 
 #include "double_utils.h"
 
@@ -17,8 +18,8 @@ public:
     long *best_feat_idx;
     double *best_feat_threshold;
     uint8_t *best_feat_kind;
-    double *best_N;
-    double *best_P_bar;
+    int *best_N;
+    int *best_P_bar;
     int best_n_equiv;
 
     BestUtility(int const &memory_size){
@@ -36,7 +37,7 @@ public:
     }
 
     inline void add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind,
-                                double const &N, double const &P_bar);
+                                int const &N, int const &P_bar);
     inline void clear();
     inline void resize(int const &memory_size);
     inline void set_utility(double const &utility);
@@ -46,7 +47,7 @@ public:
 };
 
 inline void BestUtility::add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind,
-                                        double const &N, double const &P_bar) {
+                                        int const &N, int const &P_bar) {
     if(this->best_n_equiv == this->mem_size){
         // We need to resize the array
         this->resize((this->mem_size > 1 ? this->mem_size : 2) * MEM_RESIZE_INCREASE_FACTOR);
@@ -67,18 +68,19 @@ inline void BestUtility::resize(int const &memory_size) {
     long *best_feat_idx_new = new long[memory_size];
     double *best_feat_threshold_new = new double[memory_size];
     uint8_t* best_feat_kind_new = new uint8_t[memory_size];
-    double *best_N_new = new double[memory_size];
-    double *best_P_bar_new = new double[memory_size];
+    int *best_N_new = new int[memory_size];
+    int *best_P_bar_new = new int[memory_size];
 
     // Copy the data
     bool copied = false;
-    for(int i = 0; i < this->best_n_equiv; i++){
+    if (this->best_n_equiv >= 1){
         copied = true;
-        best_feat_idx_new[i] = this->best_feat_idx[i];
-        best_feat_threshold_new[i] = this->best_feat_threshold[i];
-        best_feat_kind_new[i] = this->best_feat_kind[i];
-        best_N_new[i] = this->best_N[i];
-        best_P_bar_new[i] = this->best_P_bar[i];
+        std::copy_n(this->best_feat_idx, this->best_n_equiv, best_feat_idx_new);
+        std::copy_n(this->best_feat_threshold, this->best_n_equiv, best_feat_threshold_new);
+        std::copy_n(this->best_feat_kind, this->best_n_equiv, best_feat_kind_new);
+        std::copy_n(this->best_N, this->best_n_equiv, best_N_new);
+        std::copy_n(this->best_P_bar, this->best_n_equiv, best_P_bar_new);
+
     }
     if(copied){
         delete [] this->best_feat_idx;
