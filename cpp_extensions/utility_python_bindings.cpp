@@ -95,14 +95,14 @@ find_max(PyObject *self, PyObject *args){
                         "X and y must have the same number of rows");
         return NULL;
     }
-    if(X_dim0 != X_argsort_by_feature_dim0){
+    if(X_dim0 != X_argsort_by_feature_dim1){
         PyErr_SetString(PyExc_TypeError,
-                        "X and X_argsort_by_feature must have the same number of rows");
+                        "X must have as many rows as X_argsort_by_feature has columns.");
         return NULL;
     }
-    if(X_dim1 != X_argsort_by_feature_dim1){
+    if(X_dim1 != X_argsort_by_feature_dim0){
         PyErr_SetString(PyExc_TypeError,
-                        "X and X_argsort_by_feature must have the same number of columns");
+                        "X must have as many columns as X_argsort_by_feature has rows");
         return NULL;
     }
     if(feature_weights && feature_weights_dim0 != X_dim1){
@@ -125,9 +125,7 @@ find_max(PyObject *self, PyObject *args){
     }
     else{
         feature_weights_data = new double[X_dim1];
-        for(int i = 0; i < X_dim1; i++){
-            feature_weights_data[i] = 1;
-        }
+        std::fill_n(feature_weights_data, X_dim1, 1);
     }
 
     BestUtility best_solution(100);

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
 
 #include "double_utils.h"
 
@@ -62,11 +63,11 @@ inline void BestUtility::resize(int const &memory_size) {
 
     // Copy the data
     bool copied = false;
-    for(int i = 0; i < this->best_n_equiv; i++){
+    if (this->best_n_equiv >= 1){
         copied = true;
-        best_feat_idx_new[i] = this->best_feat_idx[i];
-        best_feat_threshold_new[i] = this->best_feat_threshold[i];
-        best_feat_kind_new[i] = this->best_feat_kind[i];
+        std::copy_n(this->best_feat_idx, this->best_n_equiv, best_feat_idx_new);
+        std::copy_n(this->best_feat_threshold, this->best_n_equiv, best_feat_threshold_new);
+        std::copy_n(this->best_feat_kind, this->best_n_equiv, best_feat_kind_new);
     }
     if(copied){
         delete [] this->best_feat_idx;

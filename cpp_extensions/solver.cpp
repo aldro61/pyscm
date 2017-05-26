@@ -59,9 +59,8 @@ int find_max(double p,
 
     // Make a mask that tells us which examples should be considered in the utility calculations
     bool *example_is_included = new bool[n_examples];
-    for(int i = 0; i < n_examples; i++){
-        example_is_included[i] = false;
-    }
+    std::fill_n(example_is_included, n_examples, false);
+    
     for(int i = 0; i < n_examples_included; i++){
         example_is_included[example_idx[i]] = true;
     }
@@ -83,7 +82,7 @@ int find_max(double p,
         for(int j = 0; j < n_examples; j++){
 
             // Get the index of the next example according to the sorting
-            long idx = Xas[i + j * n_features];
+            long idx = Xas[i * n_examples + j];
 
             // Consider this example only if it is included in the calculations
             if(example_is_included[idx]){

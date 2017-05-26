@@ -36,7 +36,7 @@ class UtilityTests(TestCase):
         X = np.array([[1, 2, 2, 2, 3, 4]], dtype=np.double).reshape(-1, 1).copy()
         y = np.array([0, 1, 0, 1, 1, 1])
         p = 1
-        Xas = np.argsort(X, axis=0)
+        Xas = np.argsort(X, axis=0).T.copy()
         best_utility, best_feat_idx, \
         best_thresholds, best_kinds = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(1))
         np.testing.assert_almost_equal(actual=best_utility, desired=1.0)
@@ -50,7 +50,7 @@ class UtilityTests(TestCase):
         """
         X = np.array([[1, 2, 2, 2, 3, 4]], dtype=np.double).reshape(-1, 1).copy()
         y = np.array([0, 1, 0, 1, 1, 1])
-        Xas = np.argsort(X, axis=0)
+        Xas = np.argsort(X, axis=0).T.copy()
         p = 0.5
         best_utility, best_feat_idx, \
         best_thresholds, best_kinds = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(1))
@@ -67,7 +67,7 @@ class UtilityTests(TestCase):
         X = np.array([[1, 1],
                       [1, 0]], dtype=np.double)
         y = np.array([0, 1])
-        Xas = np.argsort(X, axis=0)
+        Xas = np.argsort(X, axis=0).T.copy()
         p = 1.0
 
         # Equal weights, feat 1 should be the best with utility 1
@@ -96,7 +96,7 @@ class UtilityTests(TestCase):
                       [0, 0],
                       [1, 0]], dtype=np.double)
         y = np.array([0, 1, 1])
-        Xas = np.argsort(X, axis=0)
+        Xas = np.argsort(X, axis=0).T.copy()
         p = 1.0
 
         # If example 3 is included, the best feature is feat1
@@ -108,6 +108,29 @@ class UtilityTests(TestCase):
         best_utility, best_feat_idx, \
         best_thresholds, best_kinds = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
+        
+    def test_5(self):
+        """
+        Test that solver return accurate equivalent rules
+        """
+        X = np.array([[1, 1, 0.5, 1],
+                      [2, 1, 0.5, 1],
+                      [2, 1, 0.5, 1],
+                      [3, 1, 1.7, 0],
+                      [4, 1, 1.7, 0],
+                      [5, 1, 1.7, 0],
+                      [6, 1, 1.7, 0],
+                      [7, 1, 1.7, 0]], dtype=np.double)
+        y = np.array([0, 0, 0, 1, 1, 1, 1, 1])
+        Xas = np.argsort(X, axis=0).T.copy()
+        p = 1.0
+        
+        best_utility, best_feat_idx, \
+        best_thresholds, best_kinds = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_utility, desired=3.0)
+        np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 2, 3])
+        np.testing.assert_almost_equal(actual=best_thresholds, desired=[2., 0.5, 0.])
+        np.testing.assert_almost_equal(actual=best_kinds, desired=[0, 0, 1])
 
     def test_random_data(self):
         """
@@ -125,7 +148,7 @@ class UtilityTests(TestCase):
                 for _ in range(n_tests):
                     p = max(0, np.random.rand() * 100.)
                     x = (np.random.rand(n_examples) * 5.).round(n_decimals).reshape(-1, 1).copy()
-                    xas = np.argsort(x, axis=0)
+                    xas = np.argsort(x, axis=0).T.copy()
                     y = np.random.randint(0, 2, n_examples)
                     thresholds = np.unique(x)
 
