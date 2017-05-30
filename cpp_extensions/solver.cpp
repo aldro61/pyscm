@@ -26,7 +26,7 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
                              int const &N, int const &P_bar, double const &p, double const &feature_weight,
                              int const &n_negative, int const &n_positive){
     // Get utility for x > t and check if optimal
-    double utility_0 = (N - (p * P_bar)) * feature_weight;
+    double utility_0 = (N - p * P_bar) * feature_weight;
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
@@ -38,7 +38,7 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
     // Get utility for x <= t and check if optimal
     int N_1 = n_negative - N;
     int P_bar_1 = n_positive - P_bar;
-    double utility_1 = (N_1 - (p * P_bar_1)) * feature_weight;
+    double utility_1 = (N_1 - p * P_bar_1) * feature_weight;
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
