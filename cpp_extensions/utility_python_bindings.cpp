@@ -161,9 +161,9 @@ find_max(PyObject *self, PyObject *args){
     for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_feat_idx_data[i] = best_solution.best_feat_idx[i];
         opti_thresholds_data[i] = best_solution.best_feat_threshold[i];
-        opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
-        opti_N_data[i] = (int) best_solution.best_N[i];
-        opti_P_bar_data[i] = (int) best_solution.best_P_bar[i];
+        opti_kinds_data[i] = best_solution.best_feat_kind[i];
+        opti_N_data[i] = best_solution.best_N[i];
+        opti_P_bar_data[i] = best_solution.best_P_bar[i];
     }
 
     if (feature_weights){

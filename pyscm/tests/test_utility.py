@@ -139,6 +139,8 @@ class UtilityTests(TestCase):
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 2, 3])
         np.testing.assert_almost_equal(actual=best_thresholds, desired=[2., 0.5, 0.])
         np.testing.assert_almost_equal(actual=best_kinds, desired=[0, 0, 1])
+        np.testing.assert_almost_equal(actual=best_N, desired=[3, 3, 3])
+        np.testing.assert_almost_equal(actual=best_P_bar, desired=[0, 0, 0])
 
     def test_random_data(self):
         """
