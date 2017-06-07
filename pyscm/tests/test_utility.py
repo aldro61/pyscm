@@ -139,8 +139,28 @@ class UtilityTests(TestCase):
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 2, 3])
         np.testing.assert_almost_equal(actual=best_thresholds, desired=[2., 0.5, 0.])
         np.testing.assert_almost_equal(actual=best_kinds, desired=[0, 0, 1])
-        np.testing.assert_almost_equal(actual=best_N, desired=[3, 3, 3])
-        np.testing.assert_almost_equal(actual=best_P_bar, desired=[0, 0, 0])
+
+    def test_6(self):
+        """
+        Test that solver return accurate N and P_bar
+        """
+        X = np.array([[0, 0.5, 0],
+                      [0, 1.7, 0],
+                      [1, 0.5, 0],
+                      [0, 1.7, 0],
+                      [1, 0.5, 0],
+                      [1, 1.7, 0],
+                      [1, 1.7, 0],
+                      [1, 1.7, 0]], dtype=np.double)
+        y = np.array([0, 0, 0, 1, 1, 1, 1, 1])
+        Xas = np.argsort(X, axis=0).T.copy()
+        p = 1.0
+
+        best_utility, best_feat_idx, \
+        best_thresholds, best_kinds, \
+        best_N, best_P_bar = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_N, desired=[2, 2])
+        np.testing.assert_almost_equal(actual=best_P_bar, desired=[1, 1])
 
     def test_random_data(self):
         """
