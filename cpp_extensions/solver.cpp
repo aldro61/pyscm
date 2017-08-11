@@ -23,26 +23,28 @@ void get_n_examples_by_class(const bool* example_is_included, const long* y, con
 }
 
 void update_optimal_solution(BestUtility &best_solution, int const &feature_idx, double const &threshold,
-                             double const &N, double const &P_bar, double const &p, double const &feature_weight,
+                             int const &N, int const &P_bar, double const &p, double const &feature_weight,
                              int const &n_negative, int const &n_positive){
     // Get utility for x > t and check if optimal
-    double utility_0 = (((double) N) - p * ((double) P_bar)) * feature_weight;
+    double utility_0 = ((double) N - p * (double) P_bar) * feature_weight;
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
-        best_solution.add_equivalent(feature_idx, threshold, 0);
+        best_solution.add_equivalent(feature_idx, threshold, 0, N, P_bar);
     } else if(best_solution == utility_0){
-        best_solution.add_equivalent(feature_idx, threshold, 0);
+        best_solution.add_equivalent(feature_idx, threshold, 0, N, P_bar);
     }
 
     // Get utility for x <= t and check if optimal
-    double utility_1 = (((double) n_negative - N) - p * ((double) n_positive - P_bar)) * feature_weight;
+    int N_1 = n_negative - N;
+    int P_bar_1 = n_positive - P_bar;
+    double utility_1 = ((double) N_1 - p * (double) P_bar_1) * feature_weight;
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
-        best_solution.add_equivalent(feature_idx, threshold, 1);
+        best_solution.add_equivalent(feature_idx, threshold, 1, N_1, P_bar_1);
     } else if(best_solution == utility_1){
-        best_solution.add_equivalent(feature_idx, threshold, 1);
+        best_solution.add_equivalent(feature_idx, threshold, 1, N_1, P_bar_1);
     }
 }
 

@@ -152,10 +152,18 @@ find_max(PyObject *self, PyObject *args){
     PyObject *opti_kinds = PyArray_SimpleNew(1, dims, PyArray_LONG);
     long *opti_kinds_data = (long*)PyArray_DATA(opti_kinds);
 
+    PyObject *opti_N = PyArray_SimpleNew(1, dims, PyArray_LONG);
+    long *opti_N_data = (long*)PyArray_DATA(opti_N);
+
+    PyObject *opti_P_bar = PyArray_SimpleNew(1, dims, PyArray_LONG);
+    long *opti_P_bar_data = (long*)PyArray_DATA(opti_P_bar);
+
     for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_feat_idx_data[i] = best_solution.best_feat_idx[i];
         opti_thresholds_data[i] = best_solution.best_feat_threshold[i];
-        opti_kinds_data[i] = (int) best_solution.best_feat_kind[i];
+        opti_kinds_data[i] = best_solution.best_feat_kind[i];
+        opti_N_data[i] = best_solution.best_N[i];
+        opti_P_bar_data[i] = best_solution.best_P_bar[i];
     }
 
     if (feature_weights){
@@ -170,11 +178,13 @@ find_max(PyObject *self, PyObject *args){
     Py_DECREF(X_argsort_by_feature);
     Py_DECREF(example_idx);
 
-    return Py_BuildValue("d,N,N,N",
+    return Py_BuildValue("d,N,N,N,N,N",
                          opti_utility,
                          opti_feat_idx,
                          opti_thresholds,
-                         opti_kinds);
+                         opti_kinds,
+                         opti_N,
+                         opti_P_bar);
 }
 
 
