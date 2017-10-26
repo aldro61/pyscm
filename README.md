@@ -1,6 +1,5 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.org/aldro61/pyscm.svg?branch=master)](https://travis-ci.org/aldro61/pyscm)
-[![Code Issues](https://www.quantifiedcode.com/api/v1/project/8d8e7f25fd27476281428b1df49142eb/badge.svg)](https://www.quantifiedcode.com/app/project/8d8e7f25fd27476281428b1df49142eb)
 [![DOI](https://zenodo.org/badge/17353131.svg)](https://zenodo.org/badge/latestdoi/17353131)
 
 
