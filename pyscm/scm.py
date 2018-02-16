@@ -137,8 +137,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
             if len(opti_feat_idx) > 1:
                 if tiebreaker is None:
-                    trainig_risk_decrease = 1.0 * opti_N - opti_P_bar
-                    keep_idx = np.where(trainig_risk_decrease == trainig_risk_decrease.max())[0][0]
+                    training_risk_decrease = 1.0 * opti_N - opti_P_bar
+                    keep_idx = np.where(training_risk_decrease == training_risk_decrease.max())[0][0]
                 else:
                     keep_idx = tiebreaker(opti_feat_idx, opti_threshold, opti_kind)
             else:
