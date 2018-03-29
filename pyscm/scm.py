@@ -49,7 +49,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             setattr(self, parameter, value)
         return self
 
-    def fit(self, X, y, iteration_callback=None, **fit_params):
+    def fit(self, X, y, tiebreaker=None, iteration_callback=None, **fit_params):
         """
         Fit a SCM model.
 
@@ -59,6 +59,15 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             The feature of the input examples.
         y : array-like, shape = [n_samples]
             The labels of the input examples.
+        tiebreaker: function(model_type, feature_idx, thresholds, rule_type)
+            A function that takes in the model type and information about the
+            equivalent rules and outputs the index of the rule to use. The lists
+            respectively contain the feature indices, thresholds and type
+            corresponding of the equivalent rules. If None, the rule that most
+            decreases the training error is selected. Note: the model type is
+            provided because the rules that are added to disjunction models
+            correspond to the inverse of the rules that are handled during
+            training. Handle this case with care.
         iteration_callback: function(model)
             A function that is called each time a rule is added to the model.
 
@@ -128,11 +137,13 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             opti_P_bar = self._get_best_utility_rules(X, y, X_argsort_by_feature_T, remaining_example_idx.copy(),
                                                       **utility_function_additional_args)
 
-            # TODO: Support user specified tiebreaker
             logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
             if len(opti_feat_idx) > 1:
-                trainig_risk_decrease = 1.0 * opti_N - opti_P_bar
-                keep_idx = np.where(trainig_risk_decrease == trainig_risk_decrease.max())[0][0]
+                if tiebreaker is None:
+                    training_risk_decrease = 1.0 * opti_N - opti_P_bar
+                    keep_idx = np.where(training_risk_decrease == training_risk_decrease.max())[0][0]
+                else:
+                    keep_idx = tiebreaker(self.model_type, opti_feat_idx, opti_threshold, opti_kind)
             else:
                 keep_idx = 0
             stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
