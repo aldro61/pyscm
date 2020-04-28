@@ -134,7 +134,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             opti_threshold, \
             opti_kind, \
             opti_N, \
-            opti_P_bar = self._get_best_utility_rules(X, y, X_argsort_by_feature_T, remaining_example_idx.copy(),
+            opti_P_bar = self._get_best_utility_rules(X.copy(), y.copy(), X_argsort_by_feature_T.copy(), remaining_example_idx.copy(),
                                                       **utility_function_additional_args)
 
             logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
