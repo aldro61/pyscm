@@ -27,3 +27,4 @@ python setup.py test
  * [Gaël Letarte St-Pierre](https://github.com/gletarte)
  * [Mazid Osseni](https://github.com/dizam92)
  * [Pier-Luc Plante](https://github.com/plpla)
+ * [Thibaud Godon](https://github.com/thibgo)
