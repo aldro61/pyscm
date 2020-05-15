@@ -127,6 +127,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         logging.debug("Training start")
         remaining_example_idx = np.arange(len(y))
         remaining_negative_example_idx = neg_ex_idx
+        count_remaining_negatives = [len(remaining_negative_example_idx)]
         while len(remaining_negative_example_idx) > 0 and len(self.model_) < self.max_rules:
             logging.debug("Finding the optimal rule to add to the model")
             opti_utility, \
@@ -157,12 +158,21 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             remaining_negative_example_idx = remaining_negative_example_idx[stump.classify(X[remaining_negative_example_idx])]
             logging.debug("There are {0:d} examples remaining ({1:d} negatives)".format(len(remaining_example_idx),
                                                                               len(remaining_negative_example_idx)))
+            count_remaining_negatives.append(len(remaining_negative_example_idx))
 
             iteration_callback(self.model_)
 
         logging.debug("Training completed")
 
-        self.rule_importances_ = []  # TODO: implement rule importances (like its done in Kover)
+        self.rule_importances_ = []
+        total_neg_predictions = count_remaining_negatives[0] - count_remaining_negatives[-1]
+        if total_neg_predictions == 0:
+            # in case of 0 negative predictions made
+            self.rule_importances_ = [0 for _ in range(len(count_remaining_negatives) - 1)]
+        else :
+            # compute importance of rules
+            for k in range(1, len(count_remaining_negatives)):
+                self.rule_importances_.append((count_remaining_negatives[k-1] - count_remaining_negatives[k]) / total_neg_predictions)
 
         return self
 
@@ -228,6 +238,20 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X, y = check_X_y(X, y)
         return accuracy_score(y_true=y, y_pred=self.predict(X))
+
+    def get_rules_importances(self):
+        """
+        Return self.rule_importances_ attribute of a fitted classifier
+
+        Returns:
+        --------
+        rule_importances: list of float
+            Importances of each rule, defined as
+            (number of negative examples classified by the rule) / (total negative ex classified)
+
+        """
+        check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
+        return self.rule_importances_
 
     def _append_conjunction_model(self, new_rule):
         self.model_.add(new_rule)
