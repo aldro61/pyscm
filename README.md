@@ -12,6 +12,12 @@ Marchand, M., & Taylor, J. S. (2003). The set covering machine. Journal of Machi
 ![Alt text](https://github.com/aldro61/pyscm/raw/master/examples/decision_boundary.png)
 
 ## Installation
+
+``` 
+pip install pyscm-ml
+```
+or
+
 ``` 
 python setup.py install
 ```

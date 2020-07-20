@@ -46,9 +46,12 @@ solver_module = Extension('pyscm._scm_utility',
 
 dependencies = ["numpy", "scipy", "scikit-learn", "six"]
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(
-    name="pyscm",
-    version="1.0.0",
+    name="pyscm-ml",
+    version="1.0.2",
     packages=find_packages(),
 
     cmdclass={'build_ext': build_ext},
@@ -60,11 +63,21 @@ setup(
     maintainer="Alexandre Drouin",
     maintainer_email="aldro61@gmail.com",
     description="The Set Covering Machine algorithm",
-    long_description="A fast implementation of the Set Covering Machine algorithm using a dynamic programming algorithm"
-                     " to select the rules of greatest utility.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     license="GPL-3",
-    keywords="machine learning binary classification set covering machine rules",
+    keywords="machine-learning classification set-covering-machine rule-based-models",
     url="https://github.com/aldro61/pyscm",
+
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence"
+    ],
+
 
     ext_modules=[solver_module],
 
