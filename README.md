@@ -1,6 +1,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 [![Build Status](https://travis-ci.org/aldro61/pyscm.svg?branch=master)](https://travis-ci.org/aldro61/pyscm)
 [![DOI](https://zenodo.org/badge/17353131.svg)](https://zenodo.org/badge/latestdoi/17353131)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Faldro61%2Fpyscm.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Faldro61%2Fpyscm?ref=badge_shield)
 
 
 # pySCM
@@ -34,3 +35,7 @@ python setup.py test
  * [Mazid Osseni](https://github.com/dizam92)
  * [Pier-Luc Plante](https://github.com/plpla)
  * [Thibaud Godon](https://github.com/thibgo)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Faldro61%2Fpyscm.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Faldro61%2Fpyscm?ref=badge_large)
