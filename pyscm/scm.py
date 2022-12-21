@@ -24,7 +24,12 @@ import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import accuracy_score
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted,  check_random_state
+from sklearn.utils.validation import (
+    check_X_y,
+    check_array,
+    check_is_fitted,
+    check_random_state,
+)
 from warnings import warn
 
 from ._scm_utility import find_max as find_max_utility  # cpp extensions
@@ -34,15 +39,21 @@ from .utils import _class_to_string
 
 
 class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
-    def __init__(self, p=1.0, model_type="conjunction", max_rules=10, random_state=None):
+    def __init__(
+        self, p=1.0, model_type="conjunction", max_rules=10, random_state=None
+    ):
         self.p = p
         self.model_type = model_type
         self.max_rules = max_rules
         self.random_state = random_state
 
     def get_params(self, deep=True):
-        return {"p": self.p, "model_type": self.model_type, "max_rules": self.max_rules,
-                "random_state": self.random_state}
+        return {
+            "p": self.p,
+            "model_type": self.model_type,
+            "max_rules": self.max_rules,
+            "random_state": self.random_state,
+        }
 
     def set_params(self, **parameters):
         for parameter, value in iteritems(parameters):
@@ -104,10 +115,20 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         logging.debug("Validating the input data")
         X, y = check_X_y(X, y)
         X = np.asarray(X, dtype=np.double)
-        self.classes_, y, total_n_ex_by_class = np.unique(y, return_inverse=True, return_counts=True)
+        self.classes_, y, total_n_ex_by_class = np.unique(
+            y, return_inverse=True, return_counts=True
+        )
         if len(self.classes_) != 2:
             raise ValueError("y must contain two unique classes.")
-        logging.debug("The data contains {0:d} examples. Negative class is {1!s} (n: {2:d}) and positive class is {3!s} (n: {4:d}).".format(len(y), self.classes_[0], total_n_ex_by_class[0], self.classes_[1], total_n_ex_by_class[1]))
+        logging.debug(
+            "The data contains {0:d} examples. Negative class is {1!s} (n: {2:d}) and positive class is {3!s} (n: {4:d}).".format(
+                len(y),
+                self.classes_[0],
+                total_n_ex_by_class[0],
+                self.classes_[1],
+                total_n_ex_by_class[1],
+            )
+        )
 
         # Invert the classes if we are learning a disjunction
         logging.debug("Preprocessing example labels")
@@ -122,47 +143,81 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
         # Create an empty model
         logging.debug("Initializing empty model")
-        self.model_ = ConjunctionModel() if self.model_type == "conjunction" else DisjunctionModel()
+        self.model_ = (
+            ConjunctionModel()
+            if self.model_type == "conjunction"
+            else DisjunctionModel()
+        )
 
         logging.debug("Training start")
         remaining_example_idx = np.arange(len(y))
         remaining_negative_example_idx = neg_ex_idx
-        while len(remaining_negative_example_idx) > 0 and len(self.model_) < self.max_rules:
+        while (
+            len(remaining_negative_example_idx) > 0
+            and len(self.model_) < self.max_rules
+        ):
             logging.debug("Finding the optimal rule to add to the model")
-            opti_utility, \
-            opti_feat_idx, \
-            opti_threshold, \
-            opti_kind, \
-            opti_N, \
-            opti_P_bar = self._get_best_utility_rules(X.copy(), y.copy(), X_argsort_by_feature_T.copy(), remaining_example_idx.copy(),
-                                                      **utility_function_additional_args)
+            (
+                opti_utility,
+                opti_feat_idx,
+                opti_threshold,
+                opti_kind,
+                opti_N,
+                opti_P_bar,
+            ) = self._get_best_utility_rules(
+                X.copy(),
+                y.copy(),
+                X_argsort_by_feature_T.copy(),
+                remaining_example_idx.copy(),
+                **utility_function_additional_args
+            )
 
-            logging.debug("Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx)))
+            logging.debug(
+                "Tiebreaking. Found {0:d} optimal rules".format(len(opti_feat_idx))
+            )
             if len(opti_feat_idx) > 1:
                 if tiebreaker is None:
                     training_risk_decrease = 1.0 * opti_N - opti_P_bar
-                    keep_idx = np.where(training_risk_decrease == training_risk_decrease.max())[0][0]
+                    keep_idx = np.where(
+                        training_risk_decrease == training_risk_decrease.max()
+                    )[0][0]
                 else:
-                    keep_idx = tiebreaker(self.model_type, opti_feat_idx, opti_threshold, opti_kind)
+                    keep_idx = tiebreaker(
+                        self.model_type, opti_feat_idx, opti_threshold, opti_kind
+                    )
             else:
                 keep_idx = 0
-            stump = DecisionStump(feature_idx=opti_feat_idx[keep_idx], threshold=opti_threshold[keep_idx],
-                                  kind="greater" if opti_kind[keep_idx] == 0 else "less_equal")
+            stump = DecisionStump(
+                feature_idx=opti_feat_idx[keep_idx],
+                threshold=opti_threshold[keep_idx],
+                kind="greater" if opti_kind[keep_idx] == 0 else "less_equal",
+            )
 
             logging.debug("The best rule has utility {0:.3f}".format(opti_utility))
             self._add_attribute_to_model(stump)
 
-            logging.debug("Discarding all examples that the rule classifies as negative")
-            remaining_example_idx = remaining_example_idx[stump.classify(X[remaining_example_idx])]
-            remaining_negative_example_idx = remaining_negative_example_idx[stump.classify(X[remaining_negative_example_idx])]
-            logging.debug("There are {0:d} examples remaining ({1:d} negatives)".format(len(remaining_example_idx),
-                                                                              len(remaining_negative_example_idx)))
+            logging.debug(
+                "Discarding all examples that the rule classifies as negative"
+            )
+            remaining_example_idx = remaining_example_idx[
+                stump.classify(X[remaining_example_idx])
+            ]
+            remaining_negative_example_idx = remaining_negative_example_idx[
+                stump.classify(X[remaining_negative_example_idx])
+            ]
+            logging.debug(
+                "There are {0:d} examples remaining ({1:d} negatives)".format(
+                    len(remaining_example_idx), len(remaining_negative_example_idx)
+                )
+            )
 
             iteration_callback(self.model_)
 
         logging.debug("Training completed")
 
-        self.rule_importances_ = []  # TODO: implement rule importances (like its done in Kover)
+        self.rule_importances_ = (
+            []
+        )  # TODO: implement rule importances (like its done in Kover)
 
         return self
 
@@ -200,8 +255,10 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             The class probabilities for each example. Classes are ordered by lexicographic order.
 
         """
-        warn("SetCoveringMachines do not support probabilistic predictions. The returned values will be zero or one.",
-             RuntimeWarning)
+        warn(
+            "SetCoveringMachines do not support probabilistic predictions. The returned values will be zero or one.",
+            RuntimeWarning,
+        )
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
         pos_proba = self.classes_[self.model_.predict(X)]
@@ -273,9 +330,13 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
         The random state.
 
     """
-    def __init__(self, p=1.0, model_type=str("conjunction"), max_rules=10, random_state=None):
-        super(SetCoveringMachineClassifier, self).__init__(p=p, model_type=model_type, max_rules=max_rules,
-                                                           random_state=random_state)
+
+    def __init__(
+        self, p=1.0, model_type=str("conjunction"), max_rules=10, random_state=None
+    ):
+        super(SetCoveringMachineClassifier, self).__init__(
+            p=p, model_type=model_type, max_rules=max_rules, random_state=random_state
+        )
 
     def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, example_idx):
         return find_max_utility(self.p, X, y, X_argsort_by_feature_T, example_idx)

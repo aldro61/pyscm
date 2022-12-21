@@ -62,6 +62,7 @@ class BaseModel(object):
     def __str__(self):
         return self._to_string()
 
+
 class ConjunctionModel(BaseModel):
     def predict(self, X):
         predictions = np.ones(X.shape[0], np.bool)

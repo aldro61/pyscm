@@ -39,5 +39,15 @@ def _class_to_string(instance):
     -----
     Private attributes must be marked with a leading underscore.
     """
-    return instance.__class__.__name__ + "(" + ",".join(
-        [str(k) + "=" + str(v) for k, v in iteritems(instance.__dict__) if str(k[0]) != "_"]) + ")"
+    return (
+        instance.__class__.__name__
+        + "("
+        + ",".join(
+            [
+                str(k) + "=" + str(v)
+                for k, v in iteritems(instance.__dict__)
+                if str(k[0]) != "_"
+            ]
+        )
+        + ")"
+    )

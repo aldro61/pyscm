@@ -26,6 +26,7 @@ class BaseRule(object):
     A rule mixin class
 
     """
+
     def __init__(self):
         super(BaseRule, self).__init__()
 
@@ -79,6 +80,7 @@ class DecisionStump(BaseRule):
         The case in which the rule returns 1, either "greater" or "less_equal".
 
     """
+
     def __init__(self, feature_idx, threshold, kind="greater"):
         self.feature_idx = feature_idx
         self.threshold = threshold
@@ -116,8 +118,13 @@ class DecisionStump(BaseRule):
             A rule that is the inverse of self.
 
         """
-        return DecisionStump(feature_idx=self.feature_idx, threshold=self.threshold,
-                             kind="greater" if self.kind == "less_equal" else "less_equal")
+        return DecisionStump(
+            feature_idx=self.feature_idx,
+            threshold=self.threshold,
+            kind="greater" if self.kind == "less_equal" else "less_equal",
+        )
 
     def __str__(self):
-        return "X[{0:d}] {1!s} {2:.3f}".format(self.feature_idx, ">" if self.kind == "greater" else "<=", self.threshold)
+        return "X[{0:d}] {1!s} {2:.3f}".format(
+            self.feature_idx, ">" if self.kind == "greater" else "<=", self.threshold
+        )

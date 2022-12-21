@@ -35,14 +35,16 @@ class build_ext(_build_ext):
         # Prevent numpy from thinking it is still in its setup process:
         __builtins__.__NUMPY_SETUP__ = False
         import numpy
+
         self.include_dirs.append(numpy.get_include())
 
 
-solver_module = Extension('pyscm._scm_utility',
-                          language="c++",
-                          sources=['cpp_extensions/utility_python_bindings.cpp',
-                                   'cpp_extensions/solver.cpp'],
-                          extra_compile_args=["-std=c++0x"] + os_compile_flags)
+solver_module = Extension(
+    "pyscm._scm_utility",
+    language="c++",
+    sources=["cpp_extensions/utility_python_bindings.cpp", "cpp_extensions/solver.cpp"],
+    extra_compile_args=["-std=c++0x"] + os_compile_flags,
+)
 
 dependencies = ["numpy", "scipy", "scikit-learn", "six"]
 
@@ -53,11 +55,9 @@ setup(
     name="pyscm-ml",
     version="1.0.2",
     packages=find_packages(),
-
-    cmdclass={'build_ext': build_ext},
+    cmdclass={"build_ext": build_ext},
     setup_requires=dependencies,
     install_requires=dependencies,
-
     author="Alexandre Drouin",
     author_email="aldro61@gmail.com",
     maintainer="Alexandre Drouin",
@@ -68,19 +68,15 @@ setup(
     license="GPL-3",
     keywords="machine-learning classification set-covering-machine rule-based-models",
     url="https://github.com/aldro61/pyscm",
-
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence"
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-
-
     ext_modules=[solver_module],
-
-    test_suite='nose.collector',
-    tests_require=['nose']
+    test_suite="nose.collector",
+    tests_require=["nose"],
 )
