@@ -53,7 +53,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="pyscm-ml",
-    version="1.0.2",
+    version="1.1.0",
     packages=find_packages(),
     cmdclass={"build_ext": build_ext},
     setup_requires=dependencies,

@@ -215,9 +215,12 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
 
         logging.debug("Training completed")
 
-        self.rule_importances_ = (
-            []
-        )  # TODO: implement rule importances (like its done in Kover)
+        logging.debug("Calculating rule importances")
+        # Definition: how often each rule outputs a value that causes the value of the model to be final
+        final_outcome = 0 if self.model_type == "conjunction" else 1
+        total_outcome = (self.model_.predict(X) == final_outcome).sum()  # n times the model outputs the final outcome
+        self.rule_importances_ = np.array([(r.classify(X) == final_outcome).sum() / total_outcome for r in self.model_.rules])  # contribution of each rule
+        logging.debug("Done.")
 
         return self
 
@@ -264,6 +267,19 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         pos_proba = self.classes_[self.model_.predict(X)]
         neg_proba = 1.0 - pos_proba
         return np.hstack((neg_proba.reshape(-1, 1), pos_proba.reshape(-1, 1)))
+    
+    @property
+    def rule_importances(self):
+        """
+        A measure of importance for each rule in the classifier based on how much it contributes to the final predictions.
+        
+        Returns:
+        --------
+        rule_importances: list of float
+            Importances of each rule, defined as defined in https://doi.org/10.1186/s12864-016-2889-6
+        """
+        check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
+        return self.rule_importances_
 
     def score(self, X, y):
         """
