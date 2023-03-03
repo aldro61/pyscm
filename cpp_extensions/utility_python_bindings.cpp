@@ -10,15 +10,16 @@
 static PyObject *
 find_max(PyObject *self, PyObject *args){
     double p;
-    PyArrayObject *X, *y, *X_argsort_by_feature, *example_idx; //borrowed
+    PyArrayObject *X, *y, *X_argsort_by_feature, *sample_weight, *example_idx; //borrowed
     PyArrayObject *feature_weights = NULL;
 
     // Extract the argument values
-    if(!PyArg_ParseTuple(args, "dO!O!O!O!|O!",
+    if(!PyArg_ParseTuple(args, "dO!O!O!O!O!|O!",
                          &p,
                          &PyArray_Type, &X,
                          &PyArray_Type, &y,
                          &PyArray_Type, &X_argsort_by_feature,
+                         &PyArray_Type, &sample_weight,
                          &PyArray_Type, &example_idx,
                          &PyArray_Type, &feature_weights)){
         return NULL;
@@ -38,6 +39,11 @@ find_max(PyObject *self, PyObject *args){
     if(PyArray_TYPE(X_argsort_by_feature) != PyArray_LONG){
         PyErr_SetString(PyExc_TypeError,
                         "X_argsort_by_feature must be numpy.ndarray type int");
+        return NULL;
+    }
+    if(PyArray_TYPE(sample_weight) != PyArray_DOUBLE){
+        PyErr_SetString(PyExc_TypeError,
+                        "sample_weight must be numpy.ndarray type double");
         return NULL;
     }
     if(PyArray_TYPE(example_idx) != PyArray_LONG){
@@ -67,6 +73,11 @@ find_max(PyObject *self, PyObject *args){
                         "X_argsort_by_feature must be a 2D numpy.ndarray");
         return NULL;
     }
+    if(PyArray_NDIM(sample_weight) != 1){
+        PyErr_SetString(PyExc_TypeError,
+                        "sample_weight must be a 1D numpy.ndarray");
+        return NULL;
+    }
     if(PyArray_NDIM(example_idx) != 1){
         PyErr_SetString(PyExc_TypeError,
                         "example_idx must be a 1D numpy.ndarray");
@@ -84,6 +95,7 @@ find_max(PyObject *self, PyObject *args){
     npy_intp y_dim0 = PyArray_DIM(y, 0);
     npy_intp X_argsort_by_feature_dim0 = PyArray_DIM(X_argsort_by_feature, 0);
     npy_intp X_argsort_by_feature_dim1 = PyArray_DIM(X_argsort_by_feature, 1);
+    npy_intp sample_weight_dim0 = PyArray_DIM(sample_weight, 0);
     npy_intp example_idx_dim0 = PyArray_DIM(example_idx, 0);
     npy_intp feature_weights_dim0 = 0;
     if(feature_weights){
@@ -105,6 +117,11 @@ find_max(PyObject *self, PyObject *args){
                         "X must have as many columns as X_argsort_by_feature has rows");
         return NULL;
     }
+    if(X_dim0 != sample_weight_dim0){
+        PyErr_SetString(PyExc_TypeError,
+                        "X must have as many rows as sample_weight has columns.");
+        return NULL;
+    }
     if(feature_weights && feature_weights_dim0 != X_dim1){
         PyErr_SetString(PyExc_TypeError,
                         "feature_weights must have shape X.shape[1]");
@@ -112,11 +129,12 @@ find_max(PyObject *self, PyObject *args){
     }
 
     // Extract the data pointer from the number arrays
-    double *X_data;
+    double *X_data, *sample_weight_data;
     long *y_data, *X_argsort_by_feature_data, *example_idx_data;
     X_data = (double*)PyArray_DATA(PyArray_GETCONTIGUOUS(X));
     y_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(y));
     X_argsort_by_feature_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(X_argsort_by_feature));
+    sample_weight_data = (double*)PyArray_DATA(PyArray_GETCONTIGUOUS(sample_weight));
     example_idx_data = (long*)PyArray_DATA(PyArray_GETCONTIGUOUS(example_idx));
 
     double *feature_weights_data;
@@ -129,7 +147,7 @@ find_max(PyObject *self, PyObject *args){
     }
 
     BestUtility best_solution(100);
-    int status = find_max(p, X_data, y_data, X_argsort_by_feature_data, example_idx_data, feature_weights_data,
+    int status = find_max(p, X_data, y_data, X_argsort_by_feature_data, sample_weight_data, example_idx_data, feature_weights_data,
                           example_idx_dim0, X_dim0, X_dim1, best_solution);
 
     if(status != 0){
@@ -176,6 +194,7 @@ find_max(PyObject *self, PyObject *args){
     Py_DECREF(X);
     Py_DECREF(y);
     Py_DECREF(X_argsort_by_feature);
+    Py_DECREF(sample_weight);
     Py_DECREF(example_idx);
 
     return Py_BuildValue("d,N,N,N,N,N",

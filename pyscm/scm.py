@@ -29,6 +29,7 @@ from sklearn.utils.validation import (
     check_array,
     check_is_fitted,
     check_random_state,
+    _check_sample_weight
 )
 from warnings import warn
 
@@ -60,7 +61,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             setattr(self, parameter, value)
         return self
 
-    def fit(self, X, y, tiebreaker=None, iteration_callback=None, **fit_params):
+    def fit(self, X, y, tiebreaker=None, iteration_callback=None,
+            sample_weight=None, **fit_params):
         """
         Fit a SCM model.
 
@@ -110,6 +112,12 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             for key, value in iteritems(fit_params):
                 if key[:9] == "utility__":
                     utility_function_additional_args[key[9:]] = value
+
+        if sample_weight is None:
+            sample_weight = np.ones(X.shape[0])
+        sample_weight = _check_sample_weight(sample_weight, X, np.float64,
+                                                 copy=True, only_non_negative=True)
+        sample_weight /= np.sum(sample_weight)
 
         # Validate the input data
         logging.debug("Validating the input data")
@@ -168,6 +176,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
                 X.copy(),
                 y.copy(),
                 X_argsort_by_feature_T.copy(),
+                sample_weight.copy(),
                 remaining_example_idx.copy(),
                 **utility_function_additional_args
             )
@@ -354,5 +363,5 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
             p=p, model_type=model_type, max_rules=max_rules, random_state=random_state
         )
 
-    def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, example_idx):
-        return find_max_utility(self.p, X, y, X_argsort_by_feature_T, example_idx)
+    def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, sample_weight, example_idx):
+        return find_max_utility(self.p, X, y, X_argsort_by_feature_T, sample_weight, example_idx)
