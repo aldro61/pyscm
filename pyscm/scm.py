@@ -133,7 +133,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         # Invert the classes if we are learning a disjunction
         logging.debug("Preprocessing example labels")
         pos_ex_idx, neg_ex_idx = self._get_example_idx_by_class(y)
-        y = np.zeros(len(y), dtype=np.int)
+        y = np.zeros(len(y), dtype=int)
         y[pos_ex_idx] = 1
         y[neg_ex_idx] = 0
 

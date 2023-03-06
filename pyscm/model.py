@@ -65,7 +65,7 @@ class BaseModel(object):
 
 class ConjunctionModel(BaseModel):
     def predict(self, X):
-        predictions = np.ones(X.shape[0], np.bool)
+        predictions = np.ones(X.shape[0], bool)
         for a in self.rules:
             predictions = np.logical_and(predictions, a.classify(X))
         return predictions.astype(np.uint8)
@@ -80,7 +80,7 @@ class ConjunctionModel(BaseModel):
 
 class DisjunctionModel(BaseModel):
     def predict(self, X):
-        predictions = np.zeros(X.shape[0], np.bool)
+        predictions = np.zeros(X.shape[0], bool)
         for a in self.rules:
             predictions = np.logical_or(predictions, a.classify(X))
         return predictions.astype(np.uint8)

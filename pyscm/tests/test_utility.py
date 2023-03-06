@@ -145,7 +145,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.array([1, 2], dtype=np.int), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, np.array([1, 2], dtype=int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
 
     def test_5(self):
