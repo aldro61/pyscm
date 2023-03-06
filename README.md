@@ -29,6 +29,7 @@ python setup.py test
 
 ## Contributors
  * [Alexandre Drouin](http://graal.ift.ulaval.ca/adrouin) (package maintainer)
+ * [Baptiste Bauvin](https://github.com/babau1)
  * [Francis Brochu](https://github.com/PhrankBrochu)
  * [Gaël Letarte St-Pierre](https://github.com/gletarte)
  * [Mazid Osseni](https://github.com/dizam92)
