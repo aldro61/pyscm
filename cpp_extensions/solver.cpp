@@ -9,7 +9,7 @@
  * Solver
  */
 
-void get_n_examples_by_class(const bool* example_is_included, const long* y, const int &n_examples, int &n_negative, int &n_positive, double* sample_weight){
+void get_n_examples_by_class(const bool* example_is_included, const long* y, const int &n_examples, double &n_negative, double &n_positive, double* sample_weight){
     for(int i = 0; i < n_examples; i++){
         if(example_is_included[i]){
             if(y[i] == 0){
@@ -24,9 +24,9 @@ void get_n_examples_by_class(const bool* example_is_included, const long* y, con
 
 void update_optimal_solution(BestUtility &best_solution, int const &feature_idx, double const &threshold,
                              double const &N, double const &P_bar, double const &p, double const &feature_weight,
-                             int const &n_negative, int const &n_positive){
+                             double const &n_negative, double const &n_positive){
     // Get utility for x > t and check if optimal
-    double utility_0 = ((double) N - p * (double) P_bar) * feature_weight;
+    double utility_0 = (N - p * P_bar) * feature_weight;
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
@@ -38,7 +38,7 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
     // Get utility for x <= t and check if optimal
     double N_1 = n_negative - N;
     double P_bar_1 = n_positive - P_bar;
-    double utility_1 = ((double) N_1 - p * (double) P_bar_1) * feature_weight;
+    double utility_1 = ( N_1 - p *  P_bar_1) * feature_weight;
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
@@ -69,7 +69,7 @@ int find_max(double p,
     }
 
     // Find the number of positive and negative examples
-    int n_negative = 0, n_positive = 0;
+    double n_negative = 0, n_positive = 0;
     get_n_examples_by_class(example_is_included, y, n_examples, n_negative, n_positive, sample_weight);
 
     // Utility calculations start

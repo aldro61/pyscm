@@ -170,11 +170,11 @@ find_max(PyObject *self, PyObject *args){
     PyObject *opti_kinds = PyArray_SimpleNew(1, dims, PyArray_LONG);
     long *opti_kinds_data = (long*)PyArray_DATA(opti_kinds);
 
-    PyObject *opti_N = PyArray_SimpleNew(1, dims, PyArray_LONG);
-    long *opti_N_data = (long*)PyArray_DATA(opti_N);
+    PyObject *opti_N = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+    double *opti_N_data = (double*)PyArray_DATA(opti_N);
 
-    PyObject *opti_P_bar = PyArray_SimpleNew(1, dims, PyArray_LONG);
-    long *opti_P_bar_data = (long*)PyArray_DATA(opti_P_bar);
+    PyObject *opti_P_bar = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+    double *opti_P_bar_data = (double*)PyArray_DATA(opti_P_bar);
 
     for(int i = 0; i < best_solution.best_n_equiv; i++){
         opti_feat_idx_data[i] = best_solution.best_feat_idx[i];

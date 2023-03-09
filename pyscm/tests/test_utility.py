@@ -224,13 +224,13 @@ class UtilityTests(TestCase):
         """
         Test that sample_weights works
         """
-        X = np.array([[1, 1], [0, 1], [0, 1], [1, 0], [0, 0], [1, 0]], dtype=np.double)
-        y = np.array([0, 0, 0, 0, 1, 1])
+        X = np.array([[1, 1], [0, 1], [0, 1], [1, 0], [0, 0], [1, 0], [1,1]], dtype=np.double)
+        y = np.array([0, 0, 0, 0, 1, 1, 1])
         Xas = np.argsort(X, axis=0).T.copy()
         sample_weight = np.ones(X.shape[0])/X.shape[0]
         p = 1.0
 
-        # If example 3 is included, the best feature is feat1
+        # With unifrom distribution
         (
             best_utility,
             best_feat_idx,
@@ -239,13 +239,11 @@ class UtilityTests(TestCase):
             best_N,
             best_P_bar,
         ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
-        print(best_feat_idx)
         np.testing.assert_almost_equal(actual=best_utility, desired=2.0/X.shape[0])
 
-
-        # If example 3 is included, the best feature is feat1
+        # When removing a sample
         sample_weight = np.ones(X.shape[0])
-        sample_weight[3]=0
+        sample_weight[-1]=0
         (
             best_utility,
             best_feat_idx,
@@ -255,6 +253,21 @@ class UtilityTests(TestCase):
             best_P_bar,
         ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_utility, desired=3.0)
+
+        # With a random distribution
+        sample_weight =  np.array([1,2,1,2,1,2,1]).astype(float)
+        weight_sum = np.sum(sample_weight)
+        sample_weight/=weight_sum
+        (
+            best_utility,
+            best_feat_idx,
+            best_thresholds,
+            best_kinds,
+            best_N,
+            best_P_bar,
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]),
+                     np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_utility, desired=3.0/weight_sum)
 
     def test_random_data(self):
         """
