@@ -27,6 +27,7 @@ int find_max(double p,
              double *X,
              long *y,
              long *Xas,
+             double *sample_weight,
              long *example_idx,
              double *feature_weights,
              int n_examples_included, // examples that we are allowed to look at

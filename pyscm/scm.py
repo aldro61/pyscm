@@ -29,6 +29,7 @@ from sklearn.utils.validation import (
     check_array,
     check_is_fitted,
     check_random_state,
+    _check_sample_weight
 )
 from warnings import warn
 
@@ -60,7 +61,8 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             setattr(self, parameter, value)
         return self
 
-    def fit(self, X, y, tiebreaker=None, iteration_callback=None, **fit_params):
+    def fit(self, X, y, tiebreaker=None, iteration_callback=None,
+            sample_weight=None, **fit_params):
         """
         Fit a SCM model.
 
@@ -118,8 +120,20 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         self.classes_, y, total_n_ex_by_class = np.unique(
             y, return_inverse=True, return_counts=True
         )
+
+        self._check_n_features(X, reset=True)
+
+        if sample_weight is None:
+            sample_weight = np.ones(X.shape[0])
+        sample_weight = _check_sample_weight(sample_weight, X, np.float64,
+                                                 copy=True, only_non_negative=True)
+        sample_weight /= np.sum(sample_weight)
+
         if len(self.classes_) != 2:
-            raise ValueError("y must contain two unique classes.")
+            if len(self.classes_) < 2:
+                raise ValueError("The dataset contains only one class")
+            else:
+                raise ValueError("Unknown label type: y must contain two unique classes.")
         logging.debug(
             "The data contains {0:d} examples. Negative class is {1!s} (n: {2:d}) and positive class is {3!s} (n: {4:d}).".format(
                 len(y),
@@ -168,6 +182,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
                 X.copy(),
                 y.copy(),
                 X_argsort_by_feature_T.copy(),
+                sample_weight.copy(),
                 remaining_example_idx.copy(),
                 **utility_function_additional_args
             )
@@ -241,6 +256,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         """
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
+        self._check_n_features(X, reset=False)
         return self.classes_[self.model_.predict(X)]
 
     def predict_proba(self, X):
@@ -264,6 +280,7 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         )
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X = check_array(X)
+        self._check_n_features(X, reset=False)
         pos_proba = self.classes_[self.model_.predict(X)]
         neg_proba = 1.0 - pos_proba
         return np.hstack((neg_proba.reshape(-1, 1), pos_proba.reshape(-1, 1)))
@@ -301,6 +318,11 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         check_is_fitted(self, ["model_", "rule_importances_", "classes_"])
         X, y = check_X_y(X, y)
         return accuracy_score(y_true=y, y_pred=self.predict(X))
+
+    def _get_tags(self):
+        tags = BaseEstimator._get_tags(self)
+        tags["binary_only"]=True
+        return tags
 
     def _append_conjunction_model(self, new_rule):
         self.model_.add(new_rule)
@@ -354,5 +376,5 @@ class SetCoveringMachineClassifier(BaseSetCoveringMachine):
             p=p, model_type=model_type, max_rules=max_rules, random_state=random_state
         )
 
-    def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, example_idx):
-        return find_max_utility(self.p, X, y, X_argsort_by_feature_T, example_idx)
+    def _get_best_utility_rules(self, X, y, X_argsort_by_feature_T, sample_weight, example_idx):
+        return find_max_utility(self.p, X, y, X_argsort_by_feature_T, sample_weight, example_idx)
