@@ -148,13 +148,15 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
             if self.model_type == "conjunction"
             else DisjunctionModel()
         )
+        # Dummy value to ensure we enter loop.
+        opti_utility = 1
 
         logging.debug("Training start")
         remaining_example_idx = np.arange(len(y))
         remaining_negative_example_idx = neg_ex_idx
         while (
             len(remaining_negative_example_idx) > 0
-            and len(self.model_) < self.max_rules
+            and len(self.model_) < self.max_rules and opti_utility > 0
         ):
             logging.debug("Finding the optimal rule to add to the model")
             (
