@@ -16,7 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-from numpy import get_include as get_numpy_include
+import numpy
 from platform import system as get_os_name
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
@@ -28,25 +28,15 @@ else:
     os_compile_flags = []
 
 
-# Required for the automatic installation of numpy
-class build_ext(_build_ext):
-    def finalize_options(self):
-        _build_ext.finalize_options(self)
-        # Prevent numpy from thinking it is still in its setup process:
-        __builtins__.__NUMPY_SETUP__ = False
-        import numpy
-
-        self.include_dirs.append(numpy.get_include())
-
-
 solver_module = Extension(
     "pyscm._scm_utility",
     language="c++",
     sources=["cpp_extensions/utility_python_bindings.cpp", "cpp_extensions/solver.cpp"],
     extra_compile_args=["-std=c++0x"] + os_compile_flags,
+    include_dirs=[numpy.get_include()]
 )
 
-dependencies = ["numpy", "scipy", "scikit-learn", "six"]
+dependencies = ["numpy<2", "scikit-learn", "six"]
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -55,8 +45,6 @@ setup(
     name="pyscm-ml",
     version="1.1.1",
     packages=find_packages(),
-    cmdclass={"build_ext": build_ext},
-    setup_requires=dependencies,
     install_requires=dependencies,
     author="Alexandre Drouin",
     author_email="aldro61@gmail.com",
@@ -77,6 +65,4 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     ext_modules=[solver_module],
-    test_suite="nose.collector",
-    tests_require=["nose"],
 )
