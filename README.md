@@ -16,15 +16,16 @@ Marchand, M., & Taylor, J. S. (2003). The set covering machine. Journal of Machi
 ``` 
 pip install pyscm-ml
 ```
-or
+or locally with
 
 ``` 
-python setup.py install
+python -m pip install -e .
 ```
 
 ## Running tests
 ```
-python setup.py test
+python -m pip install pytest
+python -m pytest
 ```
 
 ## Contributors
