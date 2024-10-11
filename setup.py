@@ -43,7 +43,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="pyscm-ml",
-    version="1.1.1",
+    version="1.1.2",
     packages=find_packages(),
     install_requires=dependencies,
     author="Alexandre Drouin",
