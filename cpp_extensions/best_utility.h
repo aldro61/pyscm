@@ -18,8 +18,8 @@ public:
     long *best_feat_idx;
     double *best_feat_threshold;
     uint8_t *best_feat_kind;
-    int *best_N;
-    int *best_P_bar;
+    double *best_N;
+    double *best_P_bar;
     int best_n_equiv;
 
     BestUtility(int const &memory_size){
@@ -37,7 +37,7 @@ public:
     }
 
     inline void add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind,
-                                int const &N, int const &P_bar);
+                                double const &N, double const &P_bar);
     inline void clear();
     inline void resize(int const &memory_size);
     inline void set_utility(double const &utility);
@@ -47,7 +47,7 @@ public:
 };
 
 inline void BestUtility::add_equivalent(long const &feature_idx, double const &threshold, uint8_t const &kind,
-                                        int const &N, int const &P_bar) {
+                                        double const &N, double const &P_bar) {
     if(this->best_n_equiv == this->mem_size){
         // We need to resize the array
         this->resize((this->mem_size > 1 ? this->mem_size : 2) * MEM_RESIZE_INCREASE_FACTOR);
@@ -68,8 +68,8 @@ inline void BestUtility::resize(int const &memory_size) {
     long *best_feat_idx_new = new long[memory_size];
     double *best_feat_threshold_new = new double[memory_size];
     uint8_t* best_feat_kind_new = new uint8_t[memory_size];
-    int *best_N_new = new int[memory_size];
-    int *best_P_bar_new = new int[memory_size];
+    double *best_N_new = new double[memory_size];
+    double *best_P_bar_new = new double[memory_size];
 
     // Copy the data
     bool copied = false;

@@ -37,6 +37,7 @@ class UtilityTests(TestCase):
         y = np.array([0, 1, 0, 1, 1, 1])
         p = 1
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         (
             best_utility,
             best_feat_idx,
@@ -44,7 +45,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(1))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(1))
         np.testing.assert_almost_equal(actual=best_utility, desired=1.0)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0])
         np.testing.assert_almost_equal(actual=best_thresholds, desired=[1])
@@ -57,6 +58,7 @@ class UtilityTests(TestCase):
         X = np.array([[1, 2, 2, 2, 3, 4]], dtype=np.double).reshape(-1, 1).copy()
         y = np.array([0, 1, 0, 1, 1, 1])
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         p = 0.5
         (
             best_utility,
@@ -65,7 +67,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(1))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(1))
 
         np.testing.assert_almost_equal(actual=best_utility, desired=1.0)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 0])
@@ -79,6 +81,7 @@ class UtilityTests(TestCase):
         X = np.array([[1, 1], [1, 0]], dtype=np.double)
         y = np.array([0, 1])
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         p = 1.0
 
         # Equal weights, feat 1 should be the best with utility 1
@@ -89,7 +92,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_utility, desired=1)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[1])
 
@@ -101,7 +104,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.array([1.0, 2.0]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.array([1.0, 2.0]))
         np.testing.assert_almost_equal(actual=best_utility, desired=2)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[1])
 
@@ -113,7 +116,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.array([1.0, 10.0]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.array([1.0, 10.0]))
         np.testing.assert_almost_equal(actual=best_utility, desired=10)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[1])
 
@@ -124,6 +127,7 @@ class UtilityTests(TestCase):
         X = np.array([[1, 1], [0, 0], [1, 0]], dtype=np.double)
         y = np.array([0, 1, 1])
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         p = 1.0
 
         # If example 3 is included, the best feature is feat1
@@ -134,7 +138,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[1])
 
         # If example 3 is included, the best feature is feat1
@@ -145,7 +149,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.array([1, 2], dtype=int), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.array([1, 2], dtype=int), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 1])
 
     def test_5(self):
@@ -167,6 +171,7 @@ class UtilityTests(TestCase):
         )
         y = np.array([0, 0, 0, 1, 1, 1, 1, 1])
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         p = 1.0
 
         (
@@ -176,7 +181,7 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_utility, desired=3.0)
         np.testing.assert_almost_equal(actual=best_feat_idx, desired=[0, 2, 3])
         np.testing.assert_almost_equal(actual=best_thresholds, desired=[2.0, 0.5, 0.0])
@@ -201,6 +206,7 @@ class UtilityTests(TestCase):
         )
         y = np.array([0, 0, 0, 1, 1, 1, 1, 1])
         Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])
         p = 1.0
 
         (
@@ -210,9 +216,58 @@ class UtilityTests(TestCase):
             best_kinds,
             best_N,
             best_P_bar,
-        ) = find_max(p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
         np.testing.assert_almost_equal(actual=best_N, desired=[2, 2])
         np.testing.assert_almost_equal(actual=best_P_bar, desired=[1, 1])
+
+    def test_7(self):
+        """
+        Test that sample_weights works
+        """
+        X = np.array([[1, 1], [0, 1], [0, 1], [1, 0], [0, 0], [1, 0], [1,1]], dtype=np.double)
+        y = np.array([0, 0, 0, 0, 1, 1, 1])
+        Xas = np.argsort(X, axis=0).T.copy()
+        sample_weight = np.ones(X.shape[0])/X.shape[0]
+        p = 1.0
+
+        # With unifrom distribution
+        (
+            best_utility,
+            best_feat_idx,
+            best_thresholds,
+            best_kinds,
+            best_N,
+            best_P_bar,
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_utility, desired=2.0/X.shape[0])
+
+        # When removing a sample
+        sample_weight = np.ones(X.shape[0])
+        sample_weight[-1]=0
+        (
+            best_utility,
+            best_feat_idx,
+            best_thresholds,
+            best_kinds,
+            best_N,
+            best_P_bar,
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]), np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_utility, desired=3.0)
+
+        # With a random distribution
+        sample_weight =  np.array([1,2,1,2,1,2,1]).astype(float)
+        weight_sum = np.sum(sample_weight)
+        sample_weight/=weight_sum
+        (
+            best_utility,
+            best_feat_idx,
+            best_thresholds,
+            best_kinds,
+            best_N,
+            best_P_bar,
+        ) = find_max(p, X, y, Xas, sample_weight, np.arange(X.shape[0]),
+                     np.ones(X.shape[1]))
+        np.testing.assert_almost_equal(actual=best_utility, desired=3.0/weight_sum)
 
     def test_random_data(self):
         """
@@ -238,7 +293,7 @@ class UtilityTests(TestCase):
                     xas = np.argsort(x, axis=0).T.copy()
                     y = np.random.randint(0, 2, n_examples)
                     thresholds = np.unique(x)
-
+                    sample_weight = np.ones(x.shape[0])
                     # Use the solver to find the solution
                     (
                         solver_best_utility,
@@ -247,7 +302,7 @@ class UtilityTests(TestCase):
                         solver_best_kinds,
                         solver_best_N,
                         solver_best_P_bar,
-                    ) = find_max(p, x, y, xas, np.arange(n_examples))
+                    ) = find_max(p, x, y, xas, sample_weight, np.arange(n_examples))
 
                     # Less equal rule utilities
                     le_rule_utilities = []

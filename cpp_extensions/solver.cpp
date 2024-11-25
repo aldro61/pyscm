@@ -9,24 +9,24 @@
  * Solver
  */
 
-void get_n_examples_by_class(const bool* example_is_included, const long* y, const int &n_examples, int &n_negative, int &n_positive){
+void get_n_examples_by_class(const bool* example_is_included, const long* y, const int &n_examples, double &n_negative, double &n_positive, double* sample_weight){
     for(int i = 0; i < n_examples; i++){
         if(example_is_included[i]){
             if(y[i] == 0){
-                n_negative ++;
+                n_negative = n_negative + sample_weight[i];
             }
             else{
-                n_positive ++;
+                n_positive = n_positive + sample_weight[i];
             }
         }
     }
 }
 
 void update_optimal_solution(BestUtility &best_solution, int const &feature_idx, double const &threshold,
-                             int const &N, int const &P_bar, double const &p, double const &feature_weight,
-                             int const &n_negative, int const &n_positive){
+                             double const &N, double const &P_bar, double const &p, double const &feature_weight,
+                             double const &n_negative, double const &n_positive){
     // Get utility for x > t and check if optimal
-    double utility_0 = ((double) N - p * (double) P_bar) * feature_weight;
+    double utility_0 = (N - p * P_bar) * feature_weight;
     if(best_solution < utility_0){
         best_solution.clear();
         best_solution.set_utility(utility_0);
@@ -36,9 +36,9 @@ void update_optimal_solution(BestUtility &best_solution, int const &feature_idx,
     }
 
     // Get utility for x <= t and check if optimal
-    int N_1 = n_negative - N;
-    int P_bar_1 = n_positive - P_bar;
-    double utility_1 = ((double) N_1 - p * (double) P_bar_1) * feature_weight;
+    double N_1 = n_negative - N;
+    double P_bar_1 = n_positive - P_bar;
+    double utility_1 = ( N_1 - p *  P_bar_1) * feature_weight;
     if(best_solution < utility_1){
         best_solution.clear();
         best_solution.set_utility(utility_1);
@@ -52,6 +52,7 @@ int find_max(double p,
              double *X,
              long *y,
              long *Xas,
+             double *sample_weight,
              long *example_idx,
              double *feature_weights,
              int n_examples_included,
@@ -68,14 +69,14 @@ int find_max(double p,
     }
 
     // Find the number of positive and negative examples
-    int n_negative = 0, n_positive = 0;
-    get_n_examples_by_class(example_is_included, y, n_examples, n_negative, n_positive);
+    double n_negative = 0, n_positive = 0;
+    get_n_examples_by_class(example_is_included, y, n_examples, n_negative, n_positive, sample_weight);
 
     // Utility calculations start
     for(int i = 0; i < n_features; i++){
 
         // For each threshold of this feature (a threshold is an example's feature value)
-        int N, P_bar, prev_N, prev_P_bar;
+        double P_bar, prev_P_bar, N, prev_N;
         double prev_threshold;
 
         prev_N = 0;
@@ -100,12 +101,12 @@ int find_max(double p,
                 }
 
                 if(label == 1){
-                    P_bar = prev_P_bar + 1;
+                    P_bar = prev_P_bar + sample_weight[idx];
                     N = prev_N;
                 }
                 else{
                     P_bar = prev_P_bar;
-                    N = prev_N + 1;
+                    N = prev_N + sample_weight[idx];
                 }
 
                 prev_N = N;

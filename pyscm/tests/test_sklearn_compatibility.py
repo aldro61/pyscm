@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils.estimator_checks import check_estimator
 from unittest import TestCase
 
 from ..scm import SetCoveringMachineClassifier
@@ -63,3 +64,11 @@ class SklearnCompatibilityTests(TestCase):
             pipeline.fit(X, y)
         except Exception as e:
             self.fail("Pipeline.fit() raised " + e.message + " unexpectedly!")
+
+    def test_check_estimator(self):
+        scm = SetCoveringMachineClassifier()
+        try:
+            check_estimator(scm)
+        except Exception as e:
+            self.fail("check_estimator raised " + e.message + " unexpectedly!")
+
