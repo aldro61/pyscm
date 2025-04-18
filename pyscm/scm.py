@@ -219,7 +219,10 @@ class BaseSetCoveringMachine(BaseEstimator, ClassifierMixin):
         # Definition: how often each rule outputs a value that causes the value of the model to be final
         final_outcome = 0 if self.model_type == "conjunction" else 1
         total_outcome = (self.model_.predict(X) == final_outcome).sum()  # n times the model outputs the final outcome
-        self.rule_importances_ = np.array([(r.classify(X) == final_outcome).sum() / total_outcome for r in self.model_.rules])  # contribution of each rule
+        if total_outcome == 0:
+            self.rule_importances_ = np.array([0 for _ in range(len(self.model_.rules))])
+        else:
+            self.rule_importances_ = np.array([(r.classify(X) == final_outcome).sum() / total_outcome for r in self.model_.rules])  # contribution of each rule
         logging.debug("Done.")
 
         return self
