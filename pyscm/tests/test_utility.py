@@ -273,3 +273,94 @@ class UtilityTests(TestCase):
                         actual=solver_best_utility,
                         desired=max(max(le_rule_utilities), max(g_rule_utilities)),
                     )
+
+    def test_variable_feature_weights_scaling(self):
+        """
+        Test that variable feature weights correctly scale the computed utility.
+        """
+        X = np.array([[1.0, 2.0], [0.0, 3.0], [2.0, 1.0]], dtype=np.double)
+        y = np.array([0, 1, 0])
+        Xas = np.argsort(X, axis=0).T.copy()
+        p = 1.0
+
+        # Uniform weights
+        (util_uniform, idx_uniform, _, _, N_uniform, P_uniform) = find_max(
+            p, X, y, Xas, np.arange(X.shape[0]), np.ones(X.shape[1])
+        )
+
+        # Double weights for feature 0
+        weights_feat0_double = np.array([2.0, 1.0])
+        (util_double, idx_double, _, _, N_double, P_double) = find_max(
+            p, X, y, Xas, np.arange(X.shape[0]), weights_feat0_double
+        )
+
+        # If feature 0 is optimal in both cases, utility should double
+        np.testing.assert_almost_equal(idx_uniform, [0])
+        np.testing.assert_almost_equal(util_double, util_uniform * 2.0)
+
+    def test_shared_feature_values_threshold_grouping(self):
+        """
+        Test that the solver correctly groups examples sharing the same feature values
+        and computes utility at the correct thresholds.
+        """
+        X = np.array([
+            [1.0, 0.5],
+            [1.0, 1.5],
+            [1.0, 0.5],
+            [2.0, 1.5],
+        ], dtype=np.double)
+        y = np.array([0, 1, 0, 1])
+        Xas = np.argsort(X, axis=0).T.copy()
+        p = 1.0
+        weights = np.ones(X.shape[1])
+
+        (util, idx, th, kind, N, P) = find_max(p, X, y, Xas, np.arange(X.shape[0]), weights)
+
+        # Feature 0 has thresholds 1.0 and 2.0
+        # Threshold 1.0: > 1.0 covers index 3 (y=1) -> N=0, P=1 -> util = -1
+        #                 <= 1.0 covers indices 0,1,2 (y=[0,1,0]) -> N=2, P=1 -> util = 1
+        np.testing.assert_almost_equal(util, 1.0)
+
+        # Check that returned N and P_bar match the threshold 1.0 <= case for feature 0
+        feat0_indices = [i for i, x in enumerate(idx) if x == 0]
+        self.assertTrue(len(feat0_indices) > 0)
+        for i in feat0_indices:
+            np.testing.assert_almost_equal(N[i], 2)
+            np.testing.assert_almost_equal(P[i], 1)
+
+    def test_hand_calculated_utility_comparison(self):
+        """
+        Compare solver output against hand-calculated utility functions for a specific case.
+        """
+        X = np.array([[0.2, 0.8], [0.6, 0.3], [0.9, 0.9]], dtype=np.double)
+        y = np.array([1, 0, 1])
+        Xas = np.argsort(X, axis=0).T.copy()
+        p = 2.0
+        weights = np.array([1.0, 2.0])
+
+        (solver_util, solver_idx, solver_th, solver_kind, solver_N, solver_P) = find_max(
+            p, X, y, Xas, np.arange(X.shape[0]), weights
+        )
+
+        # Manually enumerate all possible thresholds and kinds to find true max utility
+        true_max_util = -np.inf
+        for feat in range(X.shape[1]):
+            thresholds = np.unique(X[:, feat])
+            for t in thresholds:
+                # Kind 0: greater
+                mask_gt = X[:, feat] > t
+                N_gt = (~mask_gt[y == 0]).sum()
+                P_gt = (~mask_gt[y == 1]).sum()
+                util_gt = (N_gt - p * P_gt) * weights[feat]
+                if util_gt > true_max_util:
+                    true_max_util = util_gt
+
+                # Kind 1: less_equal
+                mask_le = X[:, feat] <= t
+                N_le = (~mask_le[y == 0]).sum()
+                P_le = (~mask_le[y == 1]).sum()
+                util_le = (N_le - p * P_le) * weights[feat]
+                if util_le > true_max_util:
+                    true_max_util = util_le
+
+        np.testing.assert_almost_equal(solver_util, true_max_util)
